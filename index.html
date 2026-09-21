@@ -1,32 +1,485 @@
-<!doctype html><html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>代墊款管理系統 V2</title><style>
-:root{--bg:#f5f7fb;--card:#fff;--text:#182230;--muted:#6b7280;--line:#e5e7eb;--accent:#2563eb;--green:#059669;--orange:#d97706;--red:#dc2626;--shadow:0 8px 28px rgba(15,23,42,.07)}*{box-sizing:border-box}body{margin:0;font-family:"Segoe UI","Microsoft JhengHei",sans-serif;background:var(--bg);color:var(--text)}button,input,select{font:inherit}.top{background:linear-gradient(135deg,#172554,#2563eb);color:white;padding:22px 28px}.top h1{margin:0;font-size:25px}.top p{margin:6px 0 0;opacity:.82}.wrap{max-width:1450px;margin:auto;padding:20px}.tabs{display:flex;gap:8px;margin-bottom:18px;flex-wrap:wrap}.tabs button{border:1px solid var(--line);background:white;padding:10px 15px;border-radius:10px;cursor:pointer}.tabs button.active{background:#1d4ed8;color:#fff;border-color:#1d4ed8}.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:17px;box-shadow:var(--shadow)}.metric{font-size:26px;font-weight:750;margin-top:5px}.label{font-size:13px;color:var(--muted)}.toolbar{display:flex;gap:9px;align-items:center;flex-wrap:wrap;margin-bottom:14px}.toolbar>*{height:40px}.input,.select{border:1px solid #d1d5db;background:#fff;border-radius:9px;padding:0 11px}.btn{border:0;border-radius:9px;padding:0 14px;cursor:pointer;background:#2563eb;color:white}.btn.gray{background:#eef2f7;color:#273244}.btn.green{background:#059669}.btn.orange{background:#d97706}.btn.red{background:#dc2626}.tablewrap{background:#fff;border:1px solid var(--line);border-radius:14px;overflow:auto;box-shadow:var(--shadow)}table{width:100%;border-collapse:collapse;min-width:1050px}th,td{padding:11px 10px;border-bottom:1px solid var(--line);text-align:left;font-size:14px}th{background:#f8fafc;position:sticky;top:0;z-index:1}tr:hover td{background:#fafcff}.status{display:inline-block;padding:4px 9px;border-radius:999px;font-size:12px}.paid{background:#dcfce7;color:#166534}.unpaid{background:#fff7ed;color:#9a3412}.amount{text-align:right;font-variant-numeric:tabular-nums}.form{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}.field label{display:block;font-size:12px;color:var(--muted);margin-bottom:5px}.field input,.field select{width:100%;height:40px;border:1px solid #d1d5db;border-radius:9px;padding:0 10px}.span2{grid-column:span 2}.actions{display:flex;gap:8px;margin-top:14px}.hidden{display:none!important}.section{margin-top:18px}.section h2{font-size:18px;margin:0 0 12px}.bar{height:12px;background:#e5e7eb;border-radius:99px;overflow:hidden}.bar i{display:block;height:100%;background:#2563eb}.list{display:grid;gap:8px}.notice{padding:11px 13px;border-radius:10px;background:#eff6ff;color:#1e40af;font-size:13px}.danger{background:#fef2f2;color:#991b1b}.success{background:#ecfdf5;color:#065f46}.modal{position:fixed;inset:0;background:rgba(15,23,42,.45);display:flex;align-items:center;justify-content:center;padding:20px;z-index:20}.modalbox{background:#fff;width:min(760px,100%);border-radius:16px;padding:20px;max-height:90vh;overflow:auto}.close{float:right;border:0;background:#eef2f7;border-radius:8px;padding:7px 10px;cursor:pointer}.cert{background:#fff;padding:28px;max-width:850px;margin:auto;border:1px solid #ddd}.cert h2{text-align:center;letter-spacing:10px}.cert table{min-width:0}.right{text-align:right}.small{font-size:12px;color:var(--muted)}@media(max-width:900px){.grid{grid-template-columns:repeat(2,1fr)}.form{grid-template-columns:repeat(2,1fr)}}@media(max-width:600px){.grid{grid-template-columns:1fr}.form{grid-template-columns:1fr}.span2{grid-column:span 1}.wrap{padding:12px}}
-</style></head><body><div class="top"><div style="max-width:1450px;margin:auto"><h1>代墊款管理系統 V2</h1><p>瀏覽器版原型｜不需要 Excel、不需要 VBA｜資料先儲存在本機瀏覽器</p></div></div><div class="wrap"><div class="tabs"><button class="active" onclick="show('dash',this)">📊 總覽</button><button onclick="show('detail',this)">📋 代墊明細</button><button onclick="show('unpaid',this)">💰 待入帳</button><button onclick="show('cert',this)">🧾 支出證明</button><button onclick="show('reconcile',this)">🏦 對帳</button><button onclick="show('settings',this)">⚙ 資料管理</button></div>
-<section id="dash"><div class="grid"><div class="card"><div class="label">全部代墊</div><div class="metric" id="mTotal">$0</div></div><div class="card"><div class="label">已入帳</div><div class="metric" id="mPaid">$0</div></div><div class="card"><div class="label">待入帳</div><div class="metric" id="mUnpaid">$0</div></div><div class="card"><div class="label">筆數</div><div class="metric" id="mCount">0</div></div></div><div class="grid section"><div class="card"><div class="label">ERP 採購</div><div class="metric" id="mErp">$0</div></div><div class="card"><div class="label">零星採購</div><div class="metric" id="mMisc">$0</div></div><div class="card"><div class="label">最近 30 天</div><div class="metric" id="m30">$0</div></div><div class="card"><div class="label">最早待入帳</div><div class="metric" style="font-size:18px" id="mNext">—</div></div></div><div class="card section"><h2>待入帳排行</h2><div id="dueBars"></div></div><div class="card section"><h2>最近資料</h2><div id="recent"></div></div></section>
-<section id="detail" class="hidden"><div class="toolbar"><button class="btn" onclick="openForm()">＋ 新增代墊</button><input id="q" class="input" style="width:240px" placeholder="搜尋內容／平台／付款方式" oninput="renderDetail()"><select id="filterStatus" class="select" onchange="renderDetail()"><option value="all">全部狀態</option><option value="unpaid">待入帳</option><option value="paid">已入帳</option></select><select id="filterSource" class="select" onchange="renderDetail()"><option value="all">全部來源</option></select><button class="btn gray" onclick="exportCSV()">匯出 CSV</button></div><div class="tablewrap"><table><thead><tr><th>購買日期</th><th>內容</th><th class="amount">金額</th><th>來源</th><th>付款方式</th><th>平台</th><th>預計入帳</th><th>狀態</th><th>操作</th></tr></thead><tbody id="tbody"></tbody></table></div></section>
-<section id="unpaid" class="hidden"><div class="card"><h2>待入帳清單</h2><div class="toolbar"><button class="btn green" onclick="markSelectedPaid()">✓ 將勾選項目設為已入帳</button><span class="small" id="selInfo"></span></div><div class="tablewrap"><table><thead><tr><th>選</th><th>預計入帳</th><th>購買日期</th><th>內容</th><th>平台</th><th>付款方式</th><th class="amount">金額</th></tr></thead><tbody id="unpaidBody"></tbody></table></div></div></section>
-<section id="cert" class="hidden"><div class="card"><h2>支出證明</h2><div class="notice">勾選要列入支出證明的代墊款，系統會自動計算金額與稅額（稅率 5%）。</div><div class="toolbar" style="margin-top:12px"><button class="btn" onclick="printCert()">🖨 列印支出證明</button><button class="btn gray" onclick="clearCert()">清除勾選</button></div><div class="tablewrap"><table><thead><tr><th>選</th><th>日期</th><th>內容</th><th>平台</th><th class="amount">金額</th></tr></thead><tbody id="certBody"></tbody></table></div></div></section>
-<section id="reconcile" class="hidden"><div class="grid"><div class="card"><div class="label">系統全部代墊</div><div class="metric" id="rTotal">$0</div></div><div class="card"><div class="label">系統已入帳</div><div class="metric" id="rPaid">$0</div></div><div class="card"><div class="label">系統待入帳</div><div class="metric" id="rUnpaid">$0</div></div><div class="card"><div class="label">銀行帳戶合計</div><div class="metric" id="rBank">—</div></div></div><div class="card section"><h2>銀行帳戶對帳</h2><div class="form"><div class="field"><label>台銀</label><input id="bank1" type="number" value="1569531"></div><div class="field"><label>中信</label><input id="bank2" type="number" value="124875"></div></div><div class="actions"><button class="btn" onclick="reconcile()">重新計算</button></div><div id="reconcileResult" class="section"></div></div></section>
-<section id="settings" class="hidden"><div class="card"><h2>資料管理</h2><div class="notice">這個 V2 原型會把新增／修改資料儲存在目前瀏覽器的 localStorage。換電腦前請先匯出備份。</div><div class="actions"><button class="btn" onclick="exportJSON()">⬇ 匯出完整備份</button><button class="btn gray" onclick="document.getElementById('file').click()">⬆ 匯入備份</button><input id="file" type="file" accept="application/json" class="hidden" onchange="importJSON(this)"></div><div class="section small">目前資料筆數：<span id="dataCount"></span><br>這個版本先以「單機瀏覽器」為目標，下一版可以再接公司共用資料庫／登入權限。</div></div></section></div>
-<div id="modal" class="modal hidden"><div class="modalbox"><button type="button" class="close" id="closeModalBtn" onclick="document.getElementById('modal').style.setProperty('display','none','important')">✕</button><h2 id="formTitle">新增代墊</h2><div class="form"><div class="field"><label>購買日期</label><input id="fDate" type="date"></div><div class="field span2"><label>內容</label><input id="fContent"></div><div class="field"><label>金額</label><input id="fAmount" type="number" min="0"></div><div class="field"><label>來源</label><select id="fSource"></select></div><div class="field"><label>付款方式</label><select id="fPayment"></select></div><div class="field"><label>平台</label><select id="fPlatform"></select></div><div class="field"><label>預計入帳日</label><input id="fDue" type="date"></div></div><div class="actions"><button type="button" class="btn" id="saveModalBtn" onclick="saveForm();document.getElementById('modal').style.setProperty('display','none','important')">儲存</button><button type="button" class="btn gray" id="cancelModalBtn" onclick="document.getElementById('modal').style.setProperty('display','none','important')">取消</button></div></div></div>
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>OBSIDIAN｜個人代墊款管理系統</title>
+<style>
+:root{
+ --bg:#080a0e;--panel:#0f1319;--panel2:#121820;--line:#242c36;--text:#edf2f7;--muted:#8d98a6;
+ --accent:#8da2b8;--accent2:#d7e1ea;--good:#64d8a3;--warn:#e8b66b;--danger:#ef7373;
+ --shadow:0 18px 50px rgba(0,0,0,.35)
+}
+*{box-sizing:border-box}
+body{margin:0;background:radial-gradient(circle at 80% -10%,#18202a 0,#080a0e 42%),var(--bg);color:var(--text);font-family:"Segoe UI","Microsoft JhengHei",sans-serif;letter-spacing:.1px}
+button,input,select{font:inherit}
+button{cursor:pointer}
+.top{padding:28px 30px 20px;border-bottom:1px solid var(--line);background:linear-gradient(180deg,rgba(255,255,255,.025),transparent)}
+.brand{max-width:1480px;margin:auto;display:flex;align-items:end;justify-content:space-between;gap:20px}
+.brand h1{margin:0;font-size:31px;letter-spacing:5px;font-weight:650}
+.brand p{margin:7px 0 0;color:#7f8a98;font-size:13px;letter-spacing:1px}
+.clock{font-size:12px;color:#687483}
+.wrap{max-width:1480px;margin:auto;padding:22px 26px 40px}
+.tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:20px}
+.tabs button{border:1px solid var(--line);background:#0d1117;color:#9ca8b6;padding:10px 14px;border-radius:8px}
+.tabs button:hover{border-color:#3a4654;color:#fff}
+.tabs button.active{background:#dce5ec;color:#111820;border-color:#dce5ec;font-weight:650}
+.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+.card{background:linear-gradient(145deg,rgba(255,255,255,.035),rgba(255,255,255,.015));border:1px solid var(--line);border-radius:14px;padding:18px;box-shadow:var(--shadow)}
+.metric{font-size:29px;font-weight:700;margin-top:7px;letter-spacing:.5px}
+.label{font-size:12px;color:var(--muted);letter-spacing:1px;text-transform:uppercase}
+.sub{font-size:12px;color:var(--muted);margin-top:6px}
+.toolbar{display:flex;gap:9px;align-items:center;flex-wrap:wrap;margin-bottom:14px}
+.toolbar>*{height:40px}
+.input,.select{border:1px solid #303944;background:#0d1117;color:#e9eef3;border-radius:8px;padding:0 11px;outline:none}
+.input:focus,.select:focus{border-color:#6e8092;box-shadow:0 0 0 2px rgba(141,162,184,.12)}
+.btn{height:40px;border:1px solid #44515e;border-radius:8px;padding:0 14px;background:#dbe4eb;color:#111820;font-weight:650}
+.btn:hover{filter:brightness(1.08)}
+.btn.gray{background:#171d25;color:#cbd4dd;border-color:#303944}.btn.green{background:#17372c;color:#8de2b8;border-color:#285d49}.btn.red{background:#3a1c1e;color:#ff9a9a;border-color:#6d3034}
+.tablewrap{background:#0d1117;border:1px solid var(--line);border-radius:14px;overflow:auto;box-shadow:var(--shadow)}
+table{width:100%;border-collapse:collapse;min-width:1120px}
+th,td{padding:11px 10px;border-bottom:1px solid #202730;text-align:left;font-size:13px}
+th{background:#11161d;color:#9eabb9;position:sticky;top:0;z-index:1;font-weight:600}
+tr:hover td{background:#121820}
+.amount{text-align:right;font-variant-numeric:tabular-nums}
+.status{display:inline-block;padding:4px 8px;border-radius:999px;font-size:11px}
+.paid{background:#15372b;color:#7ee2ae}.unpaid{background:#3a2a19;color:#f1c27b}
+.section{margin-top:16px}.section h2{font-size:17px;margin:0 0 12px}.hidden{display:none!important}
+.bar{height:9px;background:#202832;border-radius:99px;overflow:hidden}.bar i{display:block;height:100%;background:linear-gradient(90deg,#637b90,#d3dee7)}
+.notice{padding:11px 13px;border-radius:9px;background:#141d27;color:#aab8c5;font-size:12px;border:1px solid #27323d}
+.notice.good{color:#86dcb2;border-color:#275843;background:#10221b}.notice.danger{color:#ff9d9d;border-color:#5c2b2f;background:#251517}
+.small{font-size:12px;color:var(--muted)}
+.form{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.field label{display:block;font-size:12px;color:#8995a3;margin-bottom:6px}
+.field input,.field select{width:100%;height:40px;border:1px solid #303944;border-radius:8px;padding:0 10px;background:#0d1117;color:#eef2f6}
+.span2{grid-column:span 2}.actions{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.72);display:flex;align-items:center;justify-content:center;padding:20px;z-index:50;backdrop-filter:blur(6px)}
+.modalbox{background:#10151c;width:min(820px,100%);border:1px solid #303a45;border-radius:16px;padding:22px;max-height:90vh;overflow:auto;box-shadow:0 25px 90px rgba(0,0,0,.6)}
+.close{float:right;border:1px solid #303944;background:#171d25;color:#cdd6de;border-radius:8px;padding:7px 10px}
+.pill{display:inline-flex;align-items:center;gap:6px;border:1px solid #303944;background:#121820;padding:5px 8px;border-radius:999px;font-size:11px;color:#aeb9c4}
+.kpi{display:flex;justify-content:space-between;gap:20px;align-items:end}
+.setting-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.manage-list{display:grid;gap:8px;margin-top:10px}
+.manage-row{display:flex;justify-content:space-between;align-items:center;gap:12px;border:1px solid #252e38;background:#0d1117;border-radius:9px;padding:10px 12px}
+.manage-row .meta{color:#a8b3be;font-size:12px}
+.recon-head{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.recon-total{font-size:22px;font-weight:700}
+.empty{padding:28px;text-align:center;color:#687483}
+.dangerText{color:#ff9696}
+@media(max-width:1000px){.grid{grid-template-columns:repeat(2,1fr)}.form{grid-template-columns:repeat(2,1fr)}.setting-grid{grid-template-columns:1fr}}
+@media(max-width:620px){.grid{grid-template-columns:1fr}.form{grid-template-columns:1fr}.span2{grid-column:span 1}.wrap{padding:14px}.brand{align-items:start;flex-direction:column}}
+
+/* OBSIDIAN：保留原版明亮藍色系，只加入品牌細節 */
+:root{--bg:#f5f7fb;--panel:#fff;--panel2:#fff;--line:#e5e7eb;--text:#182230;--muted:#6b7280;--accent:#2563eb;--accent2:#1d4ed8;--good:#059669;--warn:#d97706;--danger:#dc2626;--shadow:0 8px 28px rgba(15,23,42,.07)}
+body{background:var(--bg);color:var(--text);letter-spacing:0}
+.top{background:linear-gradient(135deg,#172554,#2563eb);color:#fff;border-bottom:0;padding:22px 28px}
+.brand h1{font-size:27px;letter-spacing:4px}.brand p{color:rgba(255,255,255,.82);letter-spacing:.5px}
+.clock{color:rgba(255,255,255,.75)}
+.tabs button{background:#fff;color:#374151;border-color:#e5e7eb}.tabs button:hover{border-color:#93c5fd;color:#1d4ed8}.tabs button.active{background:#1d4ed8;color:#fff;border-color:#1d4ed8}
+.card{background:#fff;border-color:#e5e7eb;box-shadow:0 8px 28px rgba(15,23,42,.07)}
+.label{color:#6b7280;letter-spacing:.6px;text-transform:none}.sub,.small{color:#6b7280}
+.input,.select{border-color:#d1d5db;background:#fff;color:#182230}.input:focus,.select:focus{border-color:#60a5fa;box-shadow:0 0 0 2px rgba(37,99,235,.1)}
+.btn{border-color:#1d4ed8;background:#2563eb;color:#fff}.btn.gray{background:#fff;color:#374151;border-color:#d1d5db}.btn.green{background:#ecfdf5;color:#047857;border-color:#a7f3d0}.btn.red{background:#fef2f2;color:#b91c1c;border-color:#fecaca}
+.tablewrap{background:#fff;border-color:#e5e7eb}.tablewrap th,.tablewrap td{border-bottom-color:#e5e7eb}.tablewrap th{background:#f8fafc;color:#4b5563}.tablewrap tr:hover td{background:#f8fafc}
+.bar{background:#e5e7eb}.bar i{background:linear-gradient(90deg,#60a5fa,#2563eb)}
+.notice{background:#f8fafc;color:#4b5563;border-color:#e5e7eb}.notice.good{color:#047857;border-color:#a7f3d0;background:#ecfdf5}.notice.danger{color:#b91c1c;border-color:#fecaca;background:#fef2f2}
+.field label{color:#6b7280}.field input,.field select{border-color:#d1d5db;background:#fff;color:#182230}
+.modal{background:rgba(15,23,42,.45);backdrop-filter:blur(3px)}.modalbox{background:#fff;border-color:#e5e7eb;box-shadow:0 25px 70px rgba(15,23,42,.18)}
+.close{border-color:#d1d5db;background:#fff;color:#374151}.pill{border-color:#d1d5db;background:#f8fafc;color:#4b5563}.manage-row{border-color:#e5e7eb;background:#fff}.manage-row .meta{color:#6b7280}
+</style>
+</head>
+<body>
+<header class="top">
+ <div class="brand">
+  <div><h1>OBSIDIAN</h1><p>個人代墊款管理系統</p></div>
+  <div class="clock" id="clock"></div>
+ </div>
+</header>
+
+<div class="wrap">
+<nav class="tabs">
+ <button class="active" data-tab="dash" onclick="show('dash',this)">總覽</button>
+ <button data-tab="detail" onclick="show('detail',this)">代墊明細</button>
+ <button data-tab="unpaid" onclick="show('unpaid',this)">待入帳</button>
+ <button data-tab="reconcile" onclick="show('reconcile',this)">對帳</button>
+ <button data-tab="cert" onclick="show('cert',this)">支出證明</button>
+ <button data-tab="settings" onclick="show('settings',this)">資料管理</button>
+</nav>
+
+<section id="dash">
+ <div class="grid">
+  <div class="card"><div class="label">總代墊金額</div><div class="metric" id="mTotal">$0</div><div class="sub" id="mCountSub">0 records</div></div>
+  <div class="card"><div class="label">待入帳</div><div class="metric" id="mUnpaid">$0</div><div class="sub">尚待公司入帳</div></div>
+  <div class="card"><div class="label">已入帳</div><div class="metric" id="mPaid">$0</div><div class="sub">已完成入帳</div></div>
+  <div class="card"><div class="label">本月代墊</div><div class="metric" id="mMonth">$0</div><div class="sub" id="mMonthLabel"></div></div>
+ </div>
+ <div class="grid section">
+  <div class="card"><div class="label">ERP採購</div><div class="metric" id="mErp">$0</div></div>
+  <div class="card"><div class="label">零星採購</div><div class="metric" id="mMisc">$0</div></div>
+  <div class="card"><div class="label">近30天</div><div class="metric" id="m30">$0</div></div>
+  <div class="card"><div class="label">下一筆預計入帳</div><div class="metric" style="font-size:18px" id="mNext">—</div></div>
+ </div>
+ <div class="grid section">
+  <div class="card"><div class="label">付款工具統計</div><div id="paymentBars" style="margin-top:10px"></div></div>
+  <div class="card"><div class="label">採購類型統計</div><div id="sourceBars" style="margin-top:10px"></div></div>
+  <div class="card" style="grid-column:span 2"><div class="label">待入帳金額排行</div><div id="dueBars" style="margin-top:10px"></div></div>
+ </div>
+ <div class="card section"><div class="label">最近代墊</div><div id="recent" style="margin-top:10px"></div></div>
+</section>
+
+<section id="detail" class="hidden">
+ <div class="toolbar">
+  <button class="btn" onclick="openForm()">＋ 新增代墊</button>
+  <input id="q" class="input" style="width:250px" placeholder="搜尋內容／平台／付款工具" oninput="renderDetail()">
+  <select id="filterStatus" class="select" onchange="renderDetail()"><option value="all">全部狀態</option><option value="unpaid">待入帳</option><option value="paid">已入帳</option></select>
+  <select id="filterSource" class="select" onchange="renderDetail()"><option value="all">全部採購類型</option></select>
+  <select id="filterTool" class="select" onchange="renderDetail()"><option value="all">全部付款工具</option></select>
+  <button class="btn gray" onclick="exportCSV()">匯出 CSV</button>
+ </div>
+ <div class="tablewrap"><table><thead><tr>
+  <th>購買日期</th><th>內容</th><th class="amount">金額</th><th>採購類型</th><th>付款工具</th><th>平台</th><th>預計入帳</th><th>狀態</th><th>操作</th>
+ </tr></thead><tbody id="tbody"></tbody></table></div>
+</section>
+
+<section id="unpaid" class="hidden">
+ <div class="card">
+  <div class="kpi"><div><div class="label">待入帳款項</div><div class="recon-total" id="pendingTotal">$0</div></div><div class="small" id="selInfo"></div></div>
+  <div class="toolbar" style="margin-top:14px"><button class="btn green" onclick="markSelectedPaid()">✓ 將勾選項目設為已入帳</button></div>
+  <div class="tablewrap"><table><thead><tr><th>選</th><th>預計入帳</th><th>購買日期</th><th>內容</th><th>採購類型</th><th>付款工具</th><th class="amount">金額</th></tr></thead><tbody id="unpaidBody"></tbody></table></div>
+ </div>
+</section>
+
+<section id="reconcile" class="hidden">
+ <div class="card">
+  <div class="recon-head">
+   <select id="reconTool" class="select" onchange="renderRecon()"><option value="all">全部付款工具</option></select>
+   <input id="reconMonth" class="input" type="month" onchange="renderRecon()">
+   <select id="reconStatus" class="select" onchange="renderRecon()"><option value="all">全部狀態</option><option value="unpaid">待入帳</option><option value="paid">已入帳</option></select>
+   <button class="btn gray" onclick="clearReconFilters()">清除篩選</button>
+  </div>
+  <div class="grid section">
+   <div class="card"><div class="label">篩選總額</div><div class="metric" id="rTotal">$0</div></div>
+   <div class="card"><div class="label">已入帳</div><div class="metric" id="rPaid">$0</div></div>
+   <div class="card"><div class="label">待入帳</div><div class="metric" id="rUnpaid">$0</div></div>
+   <div class="card"><div class="label">筆數</div><div class="metric" id="rCount">0</div></div>
+  </div>
+  <div class="card section">
+   <div class="label">對帳明細</div>
+   <div id="reconList" style="margin-top:10px"></div>
+  </div>
+ </div>
+</section>
+
+<section id="cert" class="hidden">
+ <div class="card"><div class="label">支出證明</div><div class="notice" style="margin-top:10px">勾選要列入支出證明的代墊款，列印時自動計算 5% 稅額。</div>
+ <div class="toolbar" style="margin-top:12px"><button class="btn" onclick="printCert()">🖨 列印</button><button class="btn gray" onclick="clearCert()">清除勾選</button></div>
+ <div class="tablewrap"><table><thead><tr><th>選</th><th>日期</th><th>內容</th><th>付款工具</th><th class="amount">金額</th></tr></thead><tbody id="certBody"></tbody></table></div></div>
+</section>
+
+<section id="settings" class="hidden">
+ <div class="card">
+  <div class="label">資料管理</div>
+  <h2 style="margin:8px 0 4px">主檔管理</h2>
+  <div class="small">這裡管理你日常會用到的付款工具與採購平台。停用後不會出現在新增代墊的選單，但歷史資料仍會保留。</div>
+  <div class="setting-grid section">
+   <div class="card">
+    <div class="label">信用卡管理</div>
+    <div class="small" style="margin-top:5px">銀行／卡片名稱／末四碼</div>
+    <div class="manage-list" id="cardList"></div>
+    <div class="actions"><button class="btn" onclick="openCardForm()">＋ 新增信用卡</button></div>
+   </div>
+   <div class="card">
+    <div class="label">採購平台</div>
+    <div class="small" style="margin-top:5px">新增、編輯或停用平台</div>
+    <div class="manage-list" id="platformList"></div>
+    <div class="actions"><button class="btn" onclick="addPlatform()">＋ 新增平台</button></div>
+   </div>
+   <div class="card">
+    <div class="label">採購類型</div>
+    <div class="manage-list">
+      <div class="manage-row"><div><b>ERP採購</b><div class="meta">ERP 請購流程；依月結邏輯</div></div><span class="pill">固定</span></div>
+      <div class="manage-row"><div><b>零星採購</b><div class="meta">紙本／口頭請購；依當月 25 日邏輯</div></div><span class="pill">固定</span></div>
+    </div>
+    <div class="notice" style="margin-top:12px">付款方式固定為「信用卡／轉帳／現金」。信用卡再選擇具體卡片。</div>
+   </div>
+  </div>
+  <div class="section">
+   <div class="label">資料備份</div>
+   <div class="actions"><button class="btn" onclick="exportJSON()">⬇ 匯出完整備份</button><button class="btn gray" onclick="document.getElementById('file').click()">⬆ 匯入備份</button><input id="file" type="file" accept="application/json" class="hidden" onchange="importJSON(this)"><button class="btn red" onclick="clearAllData()">清空全部資料</button></div>
+   <div class="small" style="margin-top:8px">目前資料筆數：<span id="dataCount"></span>。清空資料前會要求再次確認。</div>
+  </div>
+ </div>
+</section>
+</div>
+
+<div id="modal" class="modal hidden">
+ <div class="modalbox">
+  <button type="button" class="close" id="closeModalBtn">✕</button>
+  <h2 id="formTitle" style="margin-top:0">新增代墊</h2>
+  <div class="form">
+   <div class="field"><label>購買日期</label><input id="fDate" type="date"></div>
+   <div class="field span2"><label>內容</label><input id="fContent" placeholder="例如：工具、材料、耗材"></div>
+   <div class="field"><label>金額</label><input id="fAmount" type="number" min="0"></div>
+   <div class="field"><label>採購類型</label><select id="fSource"></select></div>
+   <div class="field"><label>付款方式</label><select id="fPaymentType"><option value="信用卡">信用卡</option><option value="轉帳">轉帳</option><option value="現金">現金</option></select></div>
+   <div class="field" id="cardField"><label>信用卡</label><select id="fCard"></select></div>
+   <div class="field"><label>平台</label><select id="fPlatform"></select></div>
+   <div class="field"><label>預計入帳日 <span class="small">（可調整）</span></label><input id="fDue" type="date"></div>
+  </div>
+  <div class="notice" id="dueHint" style="margin-top:12px"></div>
+  <div class="actions"><button type="button" class="btn" id="saveModalBtn">儲存</button><button type="button" class="btn gray" id="cancelModalBtn">取消</button></div>
+ </div>
+</div>
+
+<div id="cardModal" class="modal hidden">
+ <div class="modalbox" style="max-width:560px">
+  <button type="button" class="close" id="closeCardBtn">✕</button>
+  <h2 id="cardFormTitle" style="margin-top:0">新增信用卡</h2>
+  <div class="form">
+   <div class="field"><label>發卡銀行</label><input id="cBank" placeholder="例如：台新"></div>
+   <div class="field span2"><label>卡片名稱</label><input id="cName" placeholder="例如：Richart"></div>
+   <div class="field"><label>末四碼</label><input id="cLast4" maxlength="4" inputmode="numeric" placeholder="2164"></div>
+  </div>
+  <div class="actions"><button type="button" class="btn" id="saveCardBtn">儲存</button><button type="button" class="btn gray" id="cancelCardBtn">取消</button></div>
+ </div>
+</div>
+
 <script>
-const INITIAL=[];let data=JSON.parse(localStorage.getItem('advance_v2')||'null')||INITIAL;let editId=null;const sources=["ERP採購", "零星採購"], pays=["2164", "2164中信卡", "2994", "3836中信卡", "9226中信", "9552中信", "Yahoo 聯名卡", "中信", "中信轉帳", "信用卡", "匯款", "台新", "台銀", "好市多卡", "富邦卡", "玉山卡", "現金", "街口", "轉帳", "雅虎聯名卡"], plats=["1111人力銀行", "ASUS", "MOMO", "PCHOME", "RS", "Yahoo", "apple", "cloudfare", "network", "web10", "三井", "三住", "中信", "今華", "佳那", "全國電子", "其他", "凱優特", "台哥大", "喬城", "大千", "奕騰", "好市多", "峻宇道安", "巧將", "廣華", "悅適", "捷元", "捷成", "捷翊", "敦華", "新台塑膠", "易遊網", "暐宇", "東森", "樂天", "海豐", "特力屋", "現金", "研華", "良興購物網", "蝦皮", "誠品", "豐麟", "遠寬", "酷彭", "酷澎", "露天", "順發", "鮮拾"];
-function money(n){return '$'+Math.round(n||0).toLocaleString('zh-TW')}function esc(s){return String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}function save(){localStorage.setItem('advance_v2',JSON.stringify(data));renderAll()}function show(id,btn){document.querySelectorAll('section').forEach(x=>x.classList.add('hidden'));document.getElementById(id).classList.remove('hidden');document.querySelectorAll('.tabs button').forEach(x=>x.classList.remove('active'));btn.classList.add('active');renderAll()}function sum(a){return a.reduce((s,x)=>s+Number(x.amount||0),0)}
-function renderAll(){renderDash();renderDetail();renderUnpaid();renderCert();reconcile();document.getElementById('dataCount').textContent=data.length}
-function renderDash(){let total=sum(data),paid=sum(data.filter(x=>x.done)),un=total-paid,erp=sum(data.filter(x=>x.source==='ERP採購')),misc=sum(data.filter(x=>x.source==='零星採購'));let now=new Date(),cut=new Date(now-30*864e5);let m30=sum(data.filter(x=>new Date(x.purchaseDate)>=cut));let next=data.filter(x=>!x.done&&x.dueDate).sort((a,b)=>a.dueDate.localeCompare(b.dueDate))[0];document.getElementById('mTotal').textContent=money(total);document.getElementById('mPaid').textContent=money(paid);document.getElementById('mUnpaid').textContent=money(un);document.getElementById('mCount').textContent=data.length;document.getElementById('mErp').textContent=money(erp);document.getElementById('mMisc').textContent=money(misc);document.getElementById('m30').textContent=money(m30);document.getElementById('mNext').textContent=next?next.dueDate:'—';let due=[...data.filter(x=>!x.done)].sort((a,b)=>b.amount-a.amount).slice(0,8),mx=due[0]?.amount||1;document.getElementById('dueBars').innerHTML=due.map(x=>`<div style="margin:10px 0"><div style="display:flex;justify-content:space-between;font-size:13px"><span>${esc(x.content)} · ${esc(x.platform)}</span><b>${money(x.amount)}</b></div><div class="bar"><i style="width:${Math.max(4,x.amount/mx*100)}%"></i></div></div>`).join('')||'<div class="small">目前沒有待入帳資料</div>';let recent=[...data].sort((a,b)=>b.purchaseDate.localeCompare(a.purchaseDate)).slice(0,8);document.getElementById('recent').innerHTML='<div class="tablewrap"><table style="min-width:0"><thead><tr><th>日期</th><th>內容</th><th class="amount">金額</th><th>平台</th><th>狀態</th></tr></thead><tbody>'+recent.map(x=>`<tr><td>${x.purchaseDate}</td><td>${esc(x.content)}</td><td class="amount">${money(x.amount)}</td><td>${esc(x.platform)}</td><td><span class="status ${x.done?'paid':'unpaid'}">${x.done?'已入帳':'待入帳'}</span></td></tr>`).join('')+'</tbody></table></div>'}
-function initSelects(){document.getElementById('filterSource').innerHTML='<option value="all">全部來源</option>'+sources.map(x=>`<option>${esc(x)}</option>`).join('');document.getElementById('fSource').innerHTML=sources.map(x=>`<option>${esc(x)}</option>`).join('');document.getElementById('fPayment').innerHTML=pays.map(x=>`<option>${esc(x)}</option>`).join('');document.getElementById('fPlatform').innerHTML=plats.map(x=>`<option>${esc(x)}</option>`).join('')}
-function renderDetail(){let q=(document.getElementById('q')?.value||'').toLowerCase(),st=document.getElementById('filterStatus')?.value||'all',so=document.getElementById('filterSource')?.value||'all';let arr=data.filter(x=>(!q||[x.content,x.platform,x.payment,x.source].join(' ').toLowerCase().includes(q))&&(st==='all'||(st==='paid')===x.done)&&(so==='all'||x.source===so)).sort((a,b)=>b.purchaseDate.localeCompare(a.purchaseDate));document.getElementById('tbody').innerHTML=arr.map(x=>`<tr><td>${x.purchaseDate}</td><td>${esc(x.content)}</td><td class="amount">${money(x.amount)}</td><td>${esc(x.source)}</td><td>${esc(x.payment)}</td><td>${esc(x.platform)}</td><td>${x.dueDate}</td><td><span class="status ${x.done?'paid':'unpaid'}">${x.done?'已入帳':'待入帳'}</span></td><td><button class="btn gray" onclick="togglePaid(${x.id})">${x.done?'改待入帳':'✓ 入帳'}</button> <button class="btn gray" onclick="openForm(${x.id})">編輯</button></td></tr>`).join('')}
-function renderUnpaid(){let arr=data.filter(x=>!x.done).sort((a,b)=>a.dueDate.localeCompare(b.dueDate));document.getElementById('unpaidBody').innerHTML=arr.map(x=>`<tr><td><input type="checkbox" class="paidSel" value="${x.id}"></td><td>${x.dueDate}</td><td>${x.purchaseDate}</td><td>${esc(x.content)}</td><td>${esc(x.platform)}</td><td>${esc(x.payment)}</td><td class="amount">${money(x.amount)}</td></tr>`).join('')||'<tr><td colspan="7" style="text-align:center">沒有待入帳資料</td></tr>'}
-function renderCert(){let arr=[...data].sort((a,b)=>b.purchaseDate.localeCompare(a.purchaseDate));document.getElementById('certBody').innerHTML=arr.map(x=>`<tr><td><input type="checkbox" class="certSel" value="${x.id}"></td><td>${x.purchaseDate}</td><td>${esc(x.content)}</td><td>${esc(x.platform)}</td><td class="amount">${money(x.amount)}</td></tr>`).join('')}
-function togglePaid(id){let x=data.find(x=>x.id===id);if(x){x.done=!x.done;save()}}function markSelectedPaid(){document.querySelectorAll('.paidSel:checked').forEach(c=>{let x=data.find(x=>x.id==c.value);if(x)x.done=true});save()}
-function openForm(id=null){editId=id;let x=id?data.find(y=>y.id===id):null;document.getElementById('formTitle').textContent=x?'編輯代墊':'新增代墊';document.getElementById('fDate').value=x?.purchaseDate||new Date().toISOString().slice(0,10);document.getElementById('fContent').value=x?.content||'';document.getElementById('fAmount').value=x?.amount||'';document.getElementById('fSource').value=x?.source||sources[0];document.getElementById('fPayment').value=x?.payment||pays[0];document.getElementById('fPlatform').value=x?.platform||plats[0];document.getElementById('fDue').value=x?.dueDate||'';document.getElementById('modal').classList.remove('hidden');document.getElementById('modal').style.setProperty('display','flex','important')};function closeForm(){const modal=document.getElementById('modal');if(modal){modal.classList.add('hidden');modal.style.setProperty('display','none','important')}}
-function saveForm(){const fDate=document.getElementById('fDate'),fContent=document.getElementById('fContent'),fAmount=document.getElementById('fAmount'),fSource=document.getElementById('fSource'),fPayment=document.getElementById('fPayment'),fPlatform=document.getElementById('fPlatform'),fDue=document.getElementById('fDue');let x=editId?data.find(y=>y.id===editId):{id:Date.now(),done:false};Object.assign(x,{purchaseDate:fDate.value,content:fContent.value.trim(),amount:Number(fAmount.value||0),source:fSource.value,payment:fPayment.value,platform:fPlatform.value,dueDate:fDue.value});if(!editId)data.push(x);save();closeForm()}
-function clearCert(){document.querySelectorAll('.certSel').forEach(c=>c.checked=false)}function printCert(){let ids=[...document.querySelectorAll('.certSel:checked')].map(c=>Number(c.value)),arr=data.filter(x=>ids.includes(x.id));if(!arr.length){alert('請先勾選資料');return}let total=sum(arr),tax=total*5/105,net=total-tax;let w=window.open('','_blank');w.document.write(`<html><head><title>支出證明單</title><style>body{font-family:"Microsoft JhengHei";padding:30px}.cert{max-width:800px;margin:auto}.cert h1{text-align:center;letter-spacing:10px}.cert table{width:100%;border-collapse:collapse}.cert th,.cert td{border:1px solid #333;padding:8px}.r{text-align:right}</style></head><body><div class="cert"><h1>支 出 證 明 單</h1><table><tr><th>摘要</th><th>未稅金額</th><th>稅額</th><th>總價</th><th>備註</th></tr>${arr.map(x=>{let t=x.amount*5/105;return `<tr><td>${esc(x.content)}</td><td class="r">${Math.round(x.amount-t).toLocaleString()}</td><td class="r">${Math.round(t).toLocaleString()}</td><td class="r">${Math.round(x.amount).toLocaleString()}</td><td>${esc(x.platform)}</td></tr>`}).join('')}<tr><th>合計</th><th class="r">${Math.round(net).toLocaleString()}</th><th class="r">${Math.round(tax).toLocaleString()}</th><th class="r">${Math.round(total).toLocaleString()}</th><th></th></tr></table><p style="margin-top:50px">領款人：____________________　日期：____________________</p></div><script>window.print()<\/script></body></html>`);w.document.close()}
-function exportCSV(){let rows=[['購買日期','內容','金額','來源','付款方式','平台','預計入帳日','狀態'],...data.map(x=>[x.purchaseDate,x.content,x.amount,x.source,x.payment,x.platform,x.dueDate,x.done?'已入帳':'待入帳'])];let csv='\\ufeff'+rows.map(r=>r.map(v=>'"'+String(v??'').replaceAll('"','""')+'"').join(',')).join('\\r\\n');download(new Blob([csv],{type:'text/csv;charset=utf-8'}),'代墊款明細.csv')}
-function exportJSON(){download(new Blob([JSON.stringify(data,null,2)],{type:'application/json'}),'代墊款備份.json')}function importJSON(inp){let f=inp.files[0];if(!f)return;let r=new FileReader();r.onload=()=>{try{let x=JSON.parse(r.result);if(!Array.isArray(x))throw 0;data=x;save();alert('匯入完成，共 '+data.length+' 筆')}catch(e){alert('檔案格式錯誤')}};r.readAsText(f)}function download(blob,name){let a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)}function reconcile(){let total=sum(data),paid=sum(data.filter(x=>x.done)),un=total-paid,b1=Number(document.getElementById('bank1')?.value||0),b2=Number(document.getElementById('bank2')?.value||0),bank=b1+b2;['rTotal','rPaid','rUnpaid'].forEach((id,i)=>document.getElementById(id).textContent=money([total,paid,un][i]));document.getElementById('rBank').textContent=money(bank);let diff=bank-total;document.getElementById('reconcileResult').innerHTML=`<div class="notice ${Math.abs(diff)<1?'success':'danger'}">銀行合計 ${money(bank)} ／ 系統代墊 ${money(total)} ／ 差額 <b>${money(diff)}</b></div>`}
-window.show=show;window.openForm=openForm;window.closeForm=closeForm;window.saveForm=saveForm;window.togglePaid=togglePaid;window.markSelectedPaid=markSelectedPaid;window.clearCert=clearCert;window.printCert=printCert;window.exportCSV=exportCSV;window.exportJSON=exportJSON;window.importJSON=importJSON;window.reconcile=reconcile;
-initSelects();renderAll();
-document.getElementById('closeModalBtn').addEventListener('click',closeForm);
-document.getElementById('cancelModalBtn').addEventListener('click',closeForm);
-document.getElementById('saveModalBtn').addEventListener('click',saveForm);
-document.getElementById('modal').addEventListener('click',e=>{if(e.target.id==='modal')closeForm()});
-</script></body></html>
+const INITIAL=[];
+const PLATFORMS=["1111人力銀行", "ASUS", "MOMO", "PCHOME", "RS", "Yahoo", "apple", "cloudfare", "network", "web10", "三井", "三住", "中信", "今華", "佳那", "全國電子", "其他", "凱優特", "台哥大", "喬城", "大千", "奕騰", "好市多", "峻宇道安", "巧將", "廣華", "悅適", "捷元", "捷成", "捷翊", "敦華", "新台塑膠", "易遊網", "暐宇", "東森", "樂天", "海豐", "特力屋", "現金", "研華", "良興購物網", "蝦皮", "誠品", "豐麟", "遠寬", "酷彭", "酷澎", "露天", "順發", "鮮拾"];
+const DEFAULT_CARDS=[];
+const SOURCES=["ERP採購","零星採購"];
+const PAYMENT_TYPES=["信用卡","轉帳","現金"];
+const KEY="obsidian_v1";
+let data=[];
+let settings={cards:[],platforms:[],activeTab:"dash"};
+let editId=null, editCardId=null;
+
+function money(n){return "NT$ "+Math.round(Number(n)||0).toLocaleString("zh-TW")}
+function esc(s){return String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[m]))}
+function today(){return new Date().toISOString().slice(0,10)}
+function ym(d){return d?d.slice(0,7):""}
+function sum(a){return a.reduce((s,x)=>s+Number(x.amount||0),0)}
+function save(){localStorage.setItem(KEY,JSON.stringify({data,settings}));renderAll()}
+function normalizeRecord(x){
+  let r={...x};
+  r.id=Number(r.id)||Date.now()+Math.random();
+  r.purchaseDate=r.purchaseDate||today();
+  r.content=String(r.content||"");
+  r.amount=Number(r.amount||0);
+  r.source=SOURCES.includes(r.source)?r.source:"零星採購";
+  r.done=!!r.done;
+  r.dueDate=r.dueDate||autoDue(r.purchaseDate,r.source);
+  r.platform=String(r.platform||"其他");
+  if(!r.paymentType){
+    let p=String(r.payment||"");
+    let m=p.match(/(?:^|\\D)(\\d{4})(?:\\D|$)/);
+    if(m){
+      const last4=m[1];
+      let card=settings.cards.find(c=>c.last4===last4);
+      if(!card){card={id:"c"+Date.now()+Math.random(),bank:"",name:"卡片 "+last4,last4,active:true};settings.cards.push(card)}
+      r.paymentType="信用卡";r.cardId=card.id;
+    }else if(/現金/.test(p)) r.paymentType="現金";
+    else if(/轉帳|匯款/.test(p)) r.paymentType="轉帳";
+    else if(p) r.paymentType="信用卡";
+    else r.paymentType="轉帳";
+  }
+  if(r.paymentType==="信用卡" && !r.cardId && r.payment){
+    let m=String(r.payment).match(/(?:^|\\D)(\\d{4})(?:\\D|$)/);
+    if(m){
+      let card=settings.cards.find(c=>c.last4===m[1]);
+      if(!card){card={id:"c"+Date.now()+Math.random(),bank:"",name:"卡片 "+m[1],last4:m[1],active:true};settings.cards.push(card)}
+      r.cardId=card.id;
+    }
+  }
+  return r;
+}
+function load(){
+  const raw=localStorage.getItem(KEY);
+  if(raw){
+    try{let o=JSON.parse(raw);data=(o.data||[]).map(normalizeRecord);settings=o.settings||settings}catch(e){data=[]}
+  }else{
+    const old=localStorage.getItem("advance_v2");
+    if(old){
+      try{let arr=JSON.parse(old);data=arr.map(normalizeRecord)}catch(e){data=[]}
+    }else data=INITIAL.map(normalizeRecord);
+  }
+  if(!settings.platforms?.length)settings.platforms=PLATFORMS.map((name,i)=>({id:"p"+i,name,active:true}));
+  settings.cards=settings.cards||[];
+  save();
+}
+function activeCards(){return settings.cards.filter(c=>c.active!==false)}
+function activePlatforms(){return settings.platforms.filter(p=>p.active!==false)}
+function cardLabel(id){
+  const c=settings.cards.find(c=>c.id===id);
+  if(!c)return "信用卡";
+  return [c.bank,c.name,c.last4?"("+c.last4+")":""].filter(Boolean).join(" ");
+}
+function paymentLabel(x){return x.paymentType==="信用卡"?cardLabel(x.cardId):x.paymentType||"—"}
+function autoDue(date,source){
+  if(!date)return "";
+  const d=new Date(date+"T12:00:00");
+  if(source==="ERP採購"){
+    const y=d.getFullYear(),m=d.getMonth()+1;
+    const last=new Date(y,m+1,0);
+    return last.toISOString().slice(0,10);
+  }
+  if(d.getDate()<=25)return date.slice(0,8)+"25";
+  const next=new Date(d.getFullYear(),d.getMonth()+1,25);
+  return next.toISOString().slice(0,10);
+}
+function show(id,btn){
+  document.querySelectorAll("section").forEach(s=>s.classList.add("hidden"));
+  document.getElementById(id).classList.remove("hidden");
+  document.querySelectorAll(".tabs button").forEach(b=>b.classList.remove("active"));
+  btn.classList.add("active");settings.activeTab=id;renderAll();
+}
+function renderAll(){renderDash();renderDetail();renderUnpaid();renderRecon();renderCert();renderSettings();document.getElementById("dataCount").textContent=data.length}
+function renderDash(){
+  const total=sum(data),paid=sum(data.filter(x=>x.done)),un=total-paid,erp=sum(data.filter(x=>x.source==="ERP採購")),misc=sum(data.filter(x=>x.source==="零星採購"));
+  const now=new Date(),thisYM=now.toISOString().slice(0,7),cut=new Date(now-30*864e5);
+  const month=sum(data.filter(x=>ym(x.purchaseDate)===thisYM)),m30=sum(data.filter(x=>new Date(x.purchaseDate)>=cut));
+  const next=data.filter(x=>!x.done&&x.dueDate).sort((a,b)=>a.dueDate.localeCompare(b.dueDate))[0];
+  document.getElementById("mTotal").textContent=money(total);document.getElementById("mPaid").textContent=money(paid);document.getElementById("mUnpaid").textContent=money(un);document.getElementById("mCountSub").textContent=data.length+" records";
+  document.getElementById("mMonth").textContent=money(month);document.getElementById("mMonthLabel").textContent=thisYM;document.getElementById("mErp").textContent=money(erp);document.getElementById("mMisc").textContent=money(misc);document.getElementById("m30").textContent=money(m30);document.getElementById("mNext").textContent=next?next.dueDate:"—";
+  renderBars("paymentBars",Object.entries(data.reduce((o,x)=>{let k=paymentLabel(x);o[k]=(o[k]||0)+Number(x.amount||0);return o},{})).sort((a,b)=>b[1]-a[1]).slice(0,7));
+  renderBars("sourceBars",Object.entries(data.reduce((o,x)=>{o[x.source]=(o[x.source]||0)+Number(x.amount||0);return o},{})).sort((a,b)=>b[1]-a[1]));
+  const due=[...data.filter(x=>!x.done)].sort((a,b)=>b.amount-a.amount).slice(0,7),mx=due[0]?.amount||1;
+  document.getElementById("dueBars").innerHTML=due.map(x=>`<div style="margin:10px 0"><div style="display:flex;justify-content:space-between;font-size:12px"><span>${esc(x.content)} · ${esc(paymentLabel(x))}</span><b>${money(x.amount)}</b></div><div class="bar"><i style="width:${Math.max(4,x.amount/mx*100)}%"></i></div></div>`).join("")||'<div class="empty">目前沒有待入帳資料</div>';
+  const recent=[...data].sort((a,b)=>b.purchaseDate.localeCompare(a.purchaseDate)).slice(0,8);
+  document.getElementById("recent").innerHTML=recent.length?'<div class="tablewrap"><table style="min-width:0"><thead><tr><th>日期</th><th>內容</th><th class="amount">金額</th><th>付款工具</th><th>狀態</th></tr></thead><tbody>'+recent.map(x=>`<tr><td>${x.purchaseDate}</td><td>${esc(x.content)}</td><td class="amount">${money(x.amount)}</td><td>${esc(paymentLabel(x))}</td><td><span class="status ${x.done?"paid":"unpaid"}">${x.done?"已入帳":"待入帳"}</span></td></tr>`).join("")+'</tbody></table></div>':'<div class="empty">尚無資料</div>';
+}
+function renderBars(id,entries){
+  const el=document.getElementById(id),mx=entries[0]?.[1]||1;
+  el.innerHTML=entries.map(([k,v])=>`<div style="margin:9px 0"><div style="display:flex;justify-content:space-between;font-size:12px"><span>${esc(k)}</span><b>${money(v)}</b></div><div class="bar"><i style="width:${Math.max(3,v/mx*100)}%"></i></div></div>`).join("")||'<div class="empty">尚無資料</div>';
+}
+function initFilters(){
+  document.getElementById("filterSource").innerHTML='<option value="all">全部採購類型</option>'+SOURCES.map(x=>`<option>${esc(x)}</option>`).join("");
+  const tools=[...activeCards().map(c=>({id:c.id,label:cardLabel(c)})),{id:"transfer",label:"轉帳"},{id:"cash",label:"現金"}];
+  const opts='<option value="all">全部付款工具</option>'+tools.map(t=>`<option value="${esc(t.id)}">${esc(t.label)}</option>`).join("");
+  ["filterTool","reconTool"].forEach(id=>{let el=document.getElementById(id),old=el.value;el.innerHTML=opts;el.value=old||"all"});
+}
+function renderDetail(){
+  initFilters();
+  const q=(document.getElementById("q")?.value||"").toLowerCase(),st=document.getElementById("filterStatus")?.value||"all",so=document.getElementById("filterSource")?.value||"all",tool=document.getElementById("filterTool")?.value||"all";
+  const arr=data.filter(x=>{
+    const hay=[x.content,x.platform,x.source,paymentLabel(x)].join(" ").toLowerCase();
+    const okTool=tool==="all"||(tool==="transfer"&&x.paymentType==="轉帳")||(tool==="cash"&&x.paymentType==="現金")||(x.paymentType==="信用卡"&&x.cardId===tool);
+    return (!q||hay.includes(q))&&(st==="all"||(st==="paid"&&x.done)||(st==="unpaid"&&!x.done))&&(so==="all"||x.source===so)&&okTool;
+  }).sort((a,b)=>b.purchaseDate.localeCompare(a.purchaseDate));
+  document.getElementById("tbody").innerHTML=arr.length?arr.map(x=>`<tr><td>${x.purchaseDate}</td><td>${esc(x.content)}</td><td class="amount">${money(x.amount)}</td><td>${esc(x.source)}</td><td>${esc(paymentLabel(x))}</td><td>${esc(x.platform)}</td><td>${x.dueDate||""}</td><td><span class="status ${x.done?"paid":"unpaid"}">${x.done?"已入帳":"待入帳"}</span></td><td><button class="btn gray" onclick="togglePaid(${x.id})">${x.done?"改待入帳":"✓ 入帳"}</button> <button class="btn gray" onclick="openForm(${x.id})">編輯</button> <button class="btn red" onclick="deleteItem(${x.id})">刪除</button></td></tr>`).join(""):'<tr><td colspan="9" class="empty">沒有符合條件的資料</td></tr>';
+}
+function renderUnpaid(){
+  const arr=data.filter(x=>!x.done).sort((a,b)=>(a.dueDate||"").localeCompare(b.dueDate||"")),total=sum(arr);
+  document.getElementById("pendingTotal").textContent=money(total);
+  document.getElementById("unpaidBody").innerHTML=arr.length?arr.map(x=>`<tr><td><input type="checkbox" class="paidSel" value="${x.id}"></td><td>${x.dueDate||""}</td><td>${x.purchaseDate}</td><td>${esc(x.content)}</td><td>${esc(x.source)}</td><td>${esc(paymentLabel(x))}</td><td class="amount">${money(x.amount)}</td></tr>`).join(""):'<tr><td colspan="7" class="empty">沒有待入帳資料</td></tr>';
+}
+function renderRecon(){
+  initFilters();
+  const tool=document.getElementById("reconTool")?.value||"all",month=document.getElementById("reconMonth")?.value||"",st=document.getElementById("reconStatus")?.value||"all";
+  const arr=data.filter(x=>{
+    const okTool=tool==="all"||(tool==="transfer"&&x.paymentType==="轉帳")||(tool==="cash"&&x.paymentType==="現金")||(x.paymentType==="信用卡"&&x.cardId===tool);
+    return okTool&&(!month||ym(x.purchaseDate)===month)&&(st==="all"||(st==="paid"&&x.done)||(st==="unpaid"&&!x.done));
+  }).sort((a,b)=>b.purchaseDate.localeCompare(a.purchaseDate));
+  const total=sum(arr),paid=sum(arr.filter(x=>x.done)),un=total-paid;
+  document.getElementById("rTotal").textContent=money(total);document.getElementById("rPaid").textContent=money(paid);document.getElementById("rUnpaid").textContent=money(un);document.getElementById("rCount").textContent=arr.length;
+  document.getElementById("reconList").innerHTML=arr.length?'<div class="tablewrap"><table style="min-width:900px"><thead><tr><th>日期</th><th>內容</th><th>採購類型</th><th>付款工具</th><th>平台</th><th>狀態</th><th class="amount">金額</th></tr></thead><tbody>'+arr.map(x=>`<tr><td>${x.purchaseDate}</td><td>${esc(x.content)}</td><td>${esc(x.source)}</td><td>${esc(paymentLabel(x))}</td><td>${esc(x.platform)}</td><td><span class="status ${x.done?"paid":"unpaid"}">${x.done?"已入帳":"待入帳"}</span></td><td class="amount">${money(x.amount)}</td></tr>`).join("")+'</tbody></table></div>':'<div class="empty">沒有符合條件的對帳資料</div>';
+}
+function clearReconFilters(){document.getElementById("reconTool").value="all";document.getElementById("reconMonth").value="";document.getElementById("reconStatus").value="all";renderRecon()}
+function renderCert(){
+  const arr=[...data].sort((a,b)=>b.purchaseDate.localeCompare(a.purchaseDate));
+  document.getElementById("certBody").innerHTML=arr.length?arr.map(x=>`<tr><td><input type="checkbox" class="certSel" value="${x.id}"></td><td>${x.purchaseDate}</td><td>${esc(x.content)}</td><td>${esc(paymentLabel(x))}</td><td class="amount">${money(x.amount)}</td></tr>`).join(""):'<tr><td colspan="5" class="empty">尚無資料</td></tr>';
+}
+function renderSettings(){
+  document.getElementById("cardList").innerHTML=activeCards().map(c=>`<div class="manage-row"><div><b>${esc(c.name||"未命名卡片")}</b><div class="meta">${esc(c.bank||"未設定銀行")} · ${esc(c.last4||"----")}</div></div><div><button class="btn gray" onclick="openCardForm('${c.id}')">編輯</button> <button class="btn red" onclick="toggleCard('${c.id}')">停用</button></div></div>`).join("")||'<div class="empty">尚未建立信用卡</div>';
+  document.getElementById("platformList").innerHTML=activePlatforms().map(p=>`<div class="manage-row"><div><b>${esc(p.name)}</b></div><div><button class="btn gray" onclick="renamePlatform('${p.id}')">編輯</button> <button class="btn red" onclick="togglePlatform('${p.id}')">停用</button></div></div>`).join("");
+}
+function fillForm(){
+  document.getElementById("fSource").innerHTML=SOURCES.map(x=>`<option value="${esc(x)}">${esc(x)}</option>`).join("");
+  document.getElementById("fCard").innerHTML=activeCards().map(c=>`<option value="${esc(c.id)}">${esc(cardLabel(c))}</option>`).join("")||'<option value="">請先到 資料管理 新增信用卡</option>';
+  document.getElementById("fPlatform").innerHTML=activePlatforms().map(p=>`<option value="${esc(p.name)}">${esc(p.name)}</option>`).join("");
+}
+function updateCardVisibility(){
+  const type=document.getElementById("fPaymentType").value;
+  document.getElementById("cardField").classList.toggle("hidden",type!=="信用卡");
+  if(type==="信用卡" && !activeCards().length)document.getElementById("dueHint").textContent="尚未建立信用卡。請先到 資料管理 → 信用卡管理新增卡片。";
+}
+function updateDue(){
+  const d=document.getElementById("fDate").value,s=document.getElementById("fSource").value;
+  const due=autoDue(d,s);
+  if(!editId||!document.getElementById("fDue").dataset.manual)document.getElementById("fDue").value=due;
+  document.getElementById("dueHint").textContent=s==="ERP採購"?"ERP採購：預設為購買月份的次月底最後一天。":`零星採購：預設為 ${d?(new Date(d+"T12:00:00").getDate()<=25?d.slice(0,8)+"25":"次月25日"):"當月25日"}，可自行調整。`;
+}
+function openForm(id=null){
+  editId=id;fillForm();
+  const x=id?data.find(y=>y.id===id):null;
+  document.getElementById("formTitle").textContent=x?"編輯代墊":"新增代墊";
+  document.getElementById("fDate").value=x?.purchaseDate||today();document.getElementById("fContent").value=x?.content||"";document.getElementById("fAmount").value=x?.amount||"";
+  document.getElementById("fSource").value=x?.source||SOURCES[0];document.getElementById("fPaymentType").value=x?.paymentType||"轉帳";
+  document.getElementById("fCard").value=x?.cardId||"";document.getElementById("fPlatform").value=x?.platform||activePlatforms()[0]?.name||"";
+  document.getElementById("fDue").dataset.manual=x?"1":"";document.getElementById("fDue").value=x?.dueDate||autoDue(document.getElementById("fDate").value,document.getElementById("fSource").value);
+  updateCardVisibility();updateDue();document.getElementById("fDue").dataset.manual=x?"1":"";
+  const modal=document.getElementById("modal");modal.classList.remove("hidden");modal.style.setProperty("display","flex","important");
+}
+function closeForm(){const m=document.getElementById("modal");m.classList.add("hidden");m.style.setProperty("display","none","important")}
+function saveForm(){
+  const paymentType=document.getElementById("fPaymentType").value;
+  if(paymentType==="信用卡"&&!document.getElementById("fCard").value){alert("請先選擇信用卡");return}
+  const id=editId,x=editId?data.find(y=>y.id===editId):{id:Date.now(),done:false};
+  Object.assign(x,{purchaseDate:document.getElementById("fDate").value,content:document.getElementById("fContent").value.trim(),amount:Number(document.getElementById("fAmount").value||0),source:document.getElementById("fSource").value,paymentType,cardId:paymentType==="信用卡"?document.getElementById("fCard").value:"",platform:document.getElementById("fPlatform").value,dueDate:document.getElementById("fDue").value});
+  if(!id)data.push(x);save();closeForm();
+}
+function togglePaid(id){const x=data.find(y=>y.id===id);if(x){x.done=!x.done;save()}}
+function deleteItem(id){const x=data.find(y=>y.id===id);if(!x)return;if(!confirm(`確定要刪除「${x.content||"這筆代墊"}」嗎？\\n刪除後無法復原。`))return;data=data.filter(y=>y.id!==id);save()}
+function markSelectedPaid(){document.querySelectorAll(".paidSel:checked").forEach(c=>{const x=data.find(y=>y.id==c.value);if(x)x.done=true});save()}
+function openCardForm(id=null){
+  editCardId=id;const c=id?settings.cards.find(x=>x.id===id):null;
+  document.getElementById("cardFormTitle").textContent=c?"編輯信用卡":"新增信用卡";
+  document.getElementById("cBank").value=c?.bank||"";document.getElementById("cName").value=c?.name||"";document.getElementById("cLast4").value=c?.last4||"";
+  const m=document.getElementById("cardModal");m.classList.remove("hidden");m.style.setProperty("display","flex","important");
+}
+function closeCardForm(){const m=document.getElementById("cardModal");m.classList.add("hidden");m.style.setProperty("display","none","important")}
+function saveCard(){
+  const bank=document.getElementById("cBank").value.trim(),name=document.getElementById("cName").value.trim(),last4=document.getElementById("cLast4").value.trim();
+  if(!/^\d{4}$/.test(last4)){alert("請輸入 4 位數末四碼");return}
+  if(settings.cards.some(c=>c.last4===last4&&c.id!==editCardId)){alert("這個末四碼已存在，請確認是不是同一張卡。");return}
+  const c=editCardId?settings.cards.find(x=>x.id===editCardId):{id:"c"+Date.now(),active:true};
+  Object.assign(c,{bank,name:name||("卡片 "+last4),last4});if(!editCardId)settings.cards.push(c);save();closeCardForm();
+}
+function toggleCard(id){const c=settings.cards.find(x=>x.id===id);if(c){c.active=false;save()}}
+function addPlatform(){const n=prompt("輸入新的採購平台名稱");if(!n?.trim())return;if(settings.platforms.some(p=>p.name===n.trim()))return alert("這個平台已存在。");settings.platforms.push({id:"p"+Date.now(),name:n.trim(),active:true});save()}
+function renamePlatform(id){const p=settings.platforms.find(x=>x.id===id);if(!p)return;const n=prompt("修改平台名稱",p.name);if(n?.trim()){p.name=n.trim();save()}}
+function togglePlatform(id){const p=settings.platforms.find(x=>x.id===id);if(p){p.active=false;save()}}
+function clearAllData(){if(prompt("若確定要清空所有代墊資料，請輸入 OBSIDIAN")!=="OBSIDIAN")return;data=[];save();alert("代墊資料已清空。主檔設定仍會保留。")}
+function clearCert(){document.querySelectorAll(".certSel").forEach(c=>c.checked=false)}
+function printCert(){
+  const ids=[...document.querySelectorAll(".certSel:checked")].map(c=>Number(c.value)),arr=data.filter(x=>ids.includes(Number(x.id)));
+  if(!arr.length){alert("請先勾選資料");return}
+  const total=sum(arr),tax=total*5/105,net=total-tax,w=window.open("","_blank");
+  w.document.write(`<html><head><title>支出證明單</title><style>body{font-family:"Microsoft JhengHei";padding:30px}.cert{max-width:800px;margin:auto}.cert h1{text-align:center;letter-spacing:10px}.cert table{width:100%;border-collapse:collapse}.cert th,.cert td{border:1px solid #333;padding:8px}.r{text-align:right}</style></head><body><div class="cert"><h1>支 出 證 明 單</h1><table><tr><th>摘要</th><th>未稅金額</th><th>稅額</th><th>總價</th><th>備註</th></tr>${arr.map(x=>{let t=x.amount*5/105;return `<tr><td>${esc(x.content)}</td><td class="r">${Math.round(x.amount-t).toLocaleString()}</td><td class="r">${Math.round(t).toLocaleString()}</td><td class="r">${Math.round(x.amount).toLocaleString()}</td><td>${esc(x.platform)}</td></tr>`}).join("")}<tr><th>合計</th><th class="r">${Math.round(net).toLocaleString()}</th><th class="r">${Math.round(tax).toLocaleString()}</th><th class="r">${Math.round(total).toLocaleString()}</th><th></th></tr></table><p style="margin-top:50px">領款人：____________________　日期：____________________</p></div><script>window.print()<\/script></body></html>`);w.document.close()
+}
+function exportCSV(){
+ const rows=[["購買日期","內容","金額","採購類型","付款方式","信用卡末四碼","付款工具","平台","預計入帳日","狀態"],...data.map(x=>[x.purchaseDate,x.content,x.amount,x.source,x.paymentType||"",x.paymentType==="信用卡"?(settings.cards.find(c=>c.id===x.cardId)?.last4||""):"",paymentLabel(x),x.platform,x.dueDate,x.done?"已入帳":"待入帳"])];
+ const csv="\\ufeff"+rows.map(r=>r.map(v=>'"'+String(v??"").replaceAll('"','""')+'"').join(",")).join("\\r\\n");download(new Blob([csv],{type:"text/csv;charset=utf-8"}),"OBSIDIAN_代墊明細.csv")
+}
+function exportJSON(){download(new Blob([JSON.stringify({version:1,exportedAt:new Date().toISOString(),data,settings},null,2)],{type:"application/json"}),"OBSIDIAN_完整備份.json")}
+function importJSON(inp){
+ const f=inp.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{try{
+   const o=JSON.parse(r.result);let arr,incSettings=null;
+   if(Array.isArray(o)){arr=o}else{arr=o.data;incSettings=o.settings}
+   if(!Array.isArray(arr))throw new Error();
+   if(incSettings){settings={...settings,...incSettings};settings.cards=settings.cards||[];settings.platforms=settings.platforms?.length?settings.platforms:PLATFORMS.map((name,i)=>({id:"p"+i,name,active:true}))}
+   data=arr.map(normalizeRecord);save();alert("匯入完成，共 "+data.length+" 筆")
+ }catch(e){alert("檔案格式錯誤，未匯入資料")}finally{inp.value=""}};r.readAsText(f)
+}
+function download(blob,name){const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)}
+function tickClock(){const d=new Date();document.getElementById("clock").textContent=d.toLocaleString("zh-TW",{year:"numeric",month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit",second:"2-digit",hour12:false})}
+window.show=show;window.openForm=openForm;window.closeForm=closeForm;window.saveForm=saveForm;window.togglePaid=togglePaid;window.deleteItem=deleteItem;window.markSelectedPaid=markSelectedPaid;window.printCert=printCert;window.clearCert=clearCert;window.exportCSV=exportCSV;window.exportJSON=exportJSON;window.importJSON=importJSON;window.openCardForm=openCardForm;window.closeCardForm=closeCardForm;window.saveCard=saveCard;window.toggleCard=toggleCard;window.addPlatform=addPlatform;window.renamePlatform=renamePlatform;window.togglePlatform=togglePlatform;window.clearAllData=clearAllData;window.renderRecon=renderRecon;window.clearReconFilters=clearReconFilters;
+
+document.getElementById("closeModalBtn").onclick=closeForm;document.getElementById("cancelModalBtn").onclick=closeForm;document.getElementById("saveModalBtn").onclick=saveForm;
+document.getElementById("fPaymentType").onchange=updateCardVisibility;document.getElementById("fDate").onchange=()=>{document.getElementById("fDue").dataset.manual="";updateDue()};document.getElementById("fSource").onchange=()=>{document.getElementById("fDue").dataset.manual="";updateDue()};document.getElementById("fDue").onchange=()=>document.getElementById("fDue").dataset.manual="1";
+document.getElementById("modal").onclick=e=>{if(e.target.id==="modal")closeForm()};
+document.getElementById("closeCardBtn").onclick=closeCardForm;document.getElementById("cancelCardBtn").onclick=closeCardForm;document.getElementById("saveCardBtn").onclick=saveCard;document.getElementById("cardModal").onclick=e=>{if(e.target.id==="cardModal")closeCardForm()};
+load();tickClock();setInterval(tickClock,1000);
+</script>
+</body></html>
