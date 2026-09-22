@@ -101,7 +101,6 @@ body{background:var(--bg);color:var(--text);letter-spacing:0}
  <button class="active" data-tab="dash" onclick="show('dash',this)">總覽</button>
  <button data-tab="detail" onclick="show('detail',this)">代墊明細</button>
  <button data-tab="unpaid" onclick="show('unpaid',this)">待入帳</button>
- <button data-tab="reconcile" onclick="show('reconcile',this)">對帳</button>
  <button data-tab="cert" onclick="show('cert',this)">支出證明</button>
  <button data-tab="settings" onclick="show('settings',this)">資料管理</button>
 </nav>
@@ -142,33 +141,19 @@ body{background:var(--bg);color:var(--text);letter-spacing:0}
 </section>
 
 <section id="unpaid" class="hidden">
+ <div class="grid section" style="margin-top:0">
+  <div class="card"><div class="label">零星採購｜待入帳</div><div class="metric" id="pendingMisc">NT$ 0</div><div class="small" id="pendingMiscCount">0 筆</div></div>
+  <div class="card"><div class="label">ERP採購｜待入帳</div><div class="metric" id="pendingErp">NT$ 0</div><div class="small" id="pendingErpCount">0 筆</div></div>
+  <div class="card" style="grid-column:span 2"><div class="label">全部待入帳</div><div class="recon-total" id="pendingTotal">NT$ 0</div><div class="small">公司撥款時可直接依採購類型核對金額</div></div>
+ </div>
  <div class="card">
-  <div class="kpi"><div><div class="label">待入帳款項</div><div class="recon-total" id="pendingTotal">$0</div></div><div class="small" id="selInfo"></div></div>
+  <div class="kpi"><div><div class="label">待入帳明細</div></div><div class="small" id="selInfo"></div></div>
   <div class="toolbar" style="margin-top:14px"><button class="btn green" onclick="markSelectedPaid()">✓ 將勾選項目設為已入帳</button></div>
-  <div class="tablewrap"><table><thead><tr><th>選</th><th>預計入帳</th><th>購買日期</th><th>內容</th><th>採購類型</th><th>付款工具</th><th class="amount">金額</th></tr></thead><tbody id="unpaidBody"></tbody></table></div>
+  <div class="tablewrap"><table><thead><tr><th>選</th><th>預計入帳</th><th>購買日期</th><th>內容</th><th>採購類型</th><th>付款工具</th><th>平台</th><th class="amount">金額</th></tr></thead><tbody id="unpaidBody"></tbody></table></div>
  </div>
 </section>
 
-<section id="reconcile" class="hidden">
- <div class="card">
-  <div class="recon-head">
-   <select id="reconTool" class="select" onchange="renderRecon()"><option value="all">全部付款工具</option></select>
-   <input id="reconMonth" class="input" type="month" onchange="renderRecon()">
-   <select id="reconStatus" class="select" onchange="renderRecon()"><option value="all">全部狀態</option><option value="unpaid">待入帳</option><option value="paid">已入帳</option></select>
-   <button class="btn gray" onclick="clearReconFilters()">清除篩選</button>
-  </div>
-  <div class="grid section">
-   <div class="card"><div class="label">篩選總額</div><div class="metric" id="rTotal">$0</div></div>
-   <div class="card"><div class="label">已入帳</div><div class="metric" id="rPaid">$0</div></div>
-   <div class="card"><div class="label">待入帳</div><div class="metric" id="rUnpaid">$0</div></div>
-   <div class="card"><div class="label">筆數</div><div class="metric" id="rCount">0</div></div>
-  </div>
-  <div class="card section">
-   <div class="label">對帳明細</div>
-   <div id="reconList" style="margin-top:10px"></div>
-  </div>
- </div>
-</section>
+
 
 <section id="cert" class="hidden">
  <div class="card"><div class="label">支出證明</div><div class="notice" style="margin-top:10px">勾選要列入支出證明的代墊款，列印時自動計算 5% 稅額。</div>
@@ -190,7 +175,7 @@ body{background:var(--bg);color:var(--text);letter-spacing:0}
    </div>
    <div class="card">
     <div class="label">採購平台</div>
-    <div class="small" style="margin-top:5px">新增、編輯或停用平台</div>
+    <div class="small" style="margin-top:5px">只管理常用平台；冷門平台可在新增代墊時臨時輸入</div>
     <div class="manage-list" id="platformList"></div>
     <div class="actions"><button class="btn" onclick="addPlatform()">＋ 新增平台</button></div>
    </div>
@@ -224,6 +209,7 @@ body{background:var(--bg);color:var(--text);letter-spacing:0}
    <div class="field"><label>付款方式</label><select id="fPaymentType"><option value="信用卡">信用卡</option><option value="轉帳">轉帳</option><option value="現金">現金</option></select></div>
    <div class="field" id="cardField"><label>信用卡</label><select id="fCard"></select></div>
    <div class="field"><label>平台</label><select id="fPlatform"></select></div>
+   <div class="field hidden" id="customPlatformField"><label>其他平台名稱</label><input id="fCustomPlatform" placeholder="例如：某某五金行"></div>
    <div class="field"><label>預計入帳日 <span class="small">（可調整）</span></label><input id="fDue" type="date"></div>
   </div>
   <div class="notice" id="dueHint" style="margin-top:12px"></div>
@@ -246,7 +232,7 @@ body{background:var(--bg);color:var(--text);letter-spacing:0}
 
 <script>
 const INITIAL=[];
-const PLATFORMS=["1111人力銀行", "ASUS", "MOMO", "PCHOME", "RS", "Yahoo", "apple", "cloudfare", "network", "web10", "三井", "三住", "中信", "今華", "佳那", "全國電子", "其他", "凱優特", "台哥大", "喬城", "大千", "奕騰", "好市多", "峻宇道安", "巧將", "廣華", "悅適", "捷元", "捷成", "捷翊", "敦華", "新台塑膠", "易遊網", "暐宇", "東森", "樂天", "海豐", "特力屋", "現金", "研華", "良興購物網", "蝦皮", "誠品", "豐麟", "遠寬", "酷彭", "酷澎", "露天", "順發", "鮮拾"];
+const PLATFORMS=[];
 const DEFAULT_CARDS=[];
 const SOURCES=["ERP採購","零星採購"];
 const PAYMENT_TYPES=["信用卡","轉帳","現金"];
@@ -270,7 +256,8 @@ function normalizeRecord(x){
   r.source=SOURCES.includes(r.source)?r.source:"零星採購";
   r.done=!!r.done;
   r.dueDate=r.dueDate||autoDue(r.purchaseDate,r.source);
-  r.platform=String(r.platform||"其他");
+  r.platform=String(r.platform||"");
+  r.customPlatform=String(r.customPlatform||"");
   if(!r.paymentType){
     let p=String(r.payment||"");
     let m=p.match(/(?:^|\\D)(\\d{4})(?:\\D|$)/);
@@ -306,14 +293,36 @@ function load(){
   }
   if(!settings.platforms?.length)settings.platforms=PLATFORMS.map((name,i)=>({id:"p"+i,name,active:true}));
   settings.cards=settings.cards||[];
+  normalizeCards();
   save();
 }
-function activeCards(){return settings.cards.filter(c=>c.active!==false)}
+function normalizeCard(c,i=0){
+  // 相容舊版／不同格式的信用卡資料，避免下拉選單只顯示「信用卡」
+  if(typeof c === "string"){
+    const digits=c.replace(/\D/g,"").slice(-4);
+    return {id:"c"+Date.now()+"_"+i,bank:"",name:digits?("卡片 "+digits):c,last4:digits,active:true};
+  }
+  c=c||{};
+  const rawLast4=String(c.last4??c.lastFour??c.cardLast4??c.cardNumberLast4??"").replace(/\D/g,"");
+  return {
+    id:c.id||("c"+Date.now()+"_"+i+"_"+Math.random().toString(36).slice(2,7)),
+    bank:String(c.bank??c.issuer??c.bankName??""),
+    name:String(c.name??c.cardName??c.title??""),
+    last4:rawLast4.slice(-4),
+    active:c.active!==false
+  };
+}
+function normalizeCards(){
+  settings.cards=(Array.isArray(settings.cards)?settings.cards:[]).map(normalizeCard);
+}
+function activeCards(){return settings.cards.filter(c=>c&&c.active!==false)}
 function activePlatforms(){return settings.platforms.filter(p=>p.active!==false)}
 function cardLabel(id){
   const c=settings.cards.find(c=>c.id===id);
-  if(!c)return "信用卡";
-  return [c.bank,c.name,c.last4?"("+c.last4+")":""].filter(Boolean).join(" ");
+  if(!c)return "未選擇信用卡";
+  const parts=[c.bank,c.name].filter(Boolean);
+  if(c.last4)parts.push("("+c.last4+")");
+  return parts.join(" ") || "未命名信用卡";
 }
 function paymentLabel(x){return x.paymentType==="信用卡"?cardLabel(x.cardId):x.paymentType||"—"}
 function autoDue(date,source){
@@ -334,7 +343,7 @@ function show(id,btn){
   document.querySelectorAll(".tabs button").forEach(b=>b.classList.remove("active"));
   btn.classList.add("active");settings.activeTab=id;renderAll();
 }
-function renderAll(){renderDash();renderDetail();renderUnpaid();renderRecon();renderCert();renderSettings();document.getElementById("dataCount").textContent=data.length}
+function renderAll(){renderDash();renderDetail();renderUnpaid();renderCert();renderSettings();document.getElementById("dataCount").textContent=data.length}
 function renderDash(){
   const total=sum(data),paid=sum(data.filter(x=>x.done)),un=total-paid,erp=sum(data.filter(x=>x.source==="ERP採購")),misc=sum(data.filter(x=>x.source==="零星採購"));
   const now=new Date(),thisYM=now.toISOString().slice(0,7),cut=new Date(now-30*864e5);
@@ -367,12 +376,17 @@ function renderDetail(){
     const okTool=tool==="all"||(tool==="transfer"&&x.paymentType==="轉帳")||(tool==="cash"&&x.paymentType==="現金")||(x.paymentType==="信用卡"&&x.cardId===tool);
     return (!q||hay.includes(q))&&(st==="all"||(st==="paid"&&x.done)||(st==="unpaid"&&!x.done))&&(so==="all"||x.source===so)&&okTool;
   }).sort((a,b)=>b.purchaseDate.localeCompare(a.purchaseDate));
-  document.getElementById("tbody").innerHTML=arr.length?arr.map(x=>`<tr><td>${x.purchaseDate}</td><td>${esc(x.content)}</td><td class="amount">${money(x.amount)}</td><td>${esc(x.source)}</td><td>${esc(paymentLabel(x))}</td><td>${esc(x.platform)}</td><td>${x.dueDate||""}</td><td><span class="status ${x.done?"paid":"unpaid"}">${x.done?"已入帳":"待入帳"}</span></td><td><button class="btn gray" onclick="togglePaid(${x.id})">${x.done?"改待入帳":"✓ 入帳"}</button> <button class="btn gray" onclick="openForm(${x.id})">編輯</button> <button class="btn red" onclick="deleteItem(${x.id})">刪除</button></td></tr>`).join(""):'<tr><td colspan="9" class="empty">沒有符合條件的資料</td></tr>';
+  document.getElementById("tbody").innerHTML=arr.length?arr.map(x=>`<tr><td>${x.purchaseDate}</td><td>${esc(x.content)}</td><td class="amount">${money(x.amount)}</td><td>${esc(x.source)}</td><td>${esc(paymentLabel(x))}</td><td>${esc(x.platform==="__custom__"?(x.customPlatform||"其他平台"):(x.platform||"—"))}</td><td>${x.dueDate||""}</td><td><span class="status ${x.done?"paid":"unpaid"}">${x.done?"已入帳":"待入帳"}</span></td><td><button class="btn gray" onclick="togglePaid(${x.id})">${x.done?"改待入帳":"✓ 入帳"}</button> <button class="btn gray" onclick="openForm(${x.id})">編輯</button> <button class="btn red" onclick="deleteItem(${x.id})">刪除</button></td></tr>`).join(""):'<tr><td colspan="9" class="empty">沒有符合條件的資料</td></tr>';
 }
 function renderUnpaid(){
   const arr=data.filter(x=>!x.done).sort((a,b)=>(a.dueDate||"").localeCompare(b.dueDate||"")),total=sum(arr);
+  const misc=arr.filter(x=>x.source==="零星採購"),erp=arr.filter(x=>x.source==="ERP採購");
   document.getElementById("pendingTotal").textContent=money(total);
-  document.getElementById("unpaidBody").innerHTML=arr.length?arr.map(x=>`<tr><td><input type="checkbox" class="paidSel" value="${x.id}"></td><td>${x.dueDate||""}</td><td>${x.purchaseDate}</td><td>${esc(x.content)}</td><td>${esc(x.source)}</td><td>${esc(paymentLabel(x))}</td><td class="amount">${money(x.amount)}</td></tr>`).join(""):'<tr><td colspan="7" class="empty">沒有待入帳資料</td></tr>';
+  document.getElementById("pendingMisc").textContent=money(sum(misc));
+  document.getElementById("pendingMiscCount").textContent=misc.length+" 筆";
+  document.getElementById("pendingErp").textContent=money(sum(erp));
+  document.getElementById("pendingErpCount").textContent=erp.length+" 筆";
+  document.getElementById("unpaidBody").innerHTML=arr.length?arr.map(x=>`<tr><td><input type="checkbox" class="paidSel" value="${x.id}"></td><td>${x.dueDate||""}</td><td>${x.purchaseDate}</td><td>${esc(x.content)}</td><td>${esc(x.source)}</td><td>${esc(paymentLabel(x))}</td><td>${esc(x.platform==='__custom__'?(x.customPlatform||'其他平台'):(x.platform||'—'))}</td><td class="amount">${money(x.amount)}</td></tr>`).join(""):'<tr><td colspan="8" class="empty">沒有待入帳資料</td></tr>';
 }
 function renderRecon(){
   initFilters();
@@ -396,8 +410,12 @@ function renderSettings(){
 }
 function fillForm(){
   document.getElementById("fSource").innerHTML=SOURCES.map(x=>`<option value="${esc(x)}">${esc(x)}</option>`).join("");
-  document.getElementById("fCard").innerHTML=activeCards().map(c=>`<option value="${esc(c.id)}">${esc(cardLabel(c))}</option>`).join("")||'<option value="">請先到 資料管理 新增信用卡</option>';
-  document.getElementById("fPlatform").innerHTML=activePlatforms().map(p=>`<option value="${esc(p.name)}">${esc(p.name)}</option>`).join("");
+  document.getElementById("fCard").innerHTML=activeCards().map(c=>`<option value="${esc(c.id)}">${esc(cardLabel(c.id))}</option>`).join("")||'<option value="">請先到 資料管理 新增信用卡</option>';
+  document.getElementById("fPlatform").innerHTML='<option value="">未指定</option>'+activePlatforms().map(p=>`<option value="${esc(p.name)}">${esc(p.name)}</option>`).join("")+'<option value="__custom__">其他／手動輸入</option>';
+}
+function updatePlatformVisibility(){
+  const custom=document.getElementById("fPlatform").value==="__custom__";
+  document.getElementById("customPlatformField").classList.toggle("hidden",!custom);
 }
 function updateCardVisibility(){
   const type=document.getElementById("fPaymentType").value;
@@ -416,9 +434,9 @@ function openForm(id=null){
   document.getElementById("formTitle").textContent=x?"編輯代墊":"新增代墊";
   document.getElementById("fDate").value=x?.purchaseDate||today();document.getElementById("fContent").value=x?.content||"";document.getElementById("fAmount").value=x?.amount||"";
   document.getElementById("fSource").value=x?.source||SOURCES[0];document.getElementById("fPaymentType").value=x?.paymentType||"轉帳";
-  document.getElementById("fCard").value=x?.cardId||"";document.getElementById("fPlatform").value=x?.platform||activePlatforms()[0]?.name||"";
+  document.getElementById("fCard").value=x?.cardId||"";document.getElementById("fPlatform").value=x?.platform||"";document.getElementById("fCustomPlatform").value=x?.customPlatform||"";
   document.getElementById("fDue").dataset.manual=x?"1":"";document.getElementById("fDue").value=x?.dueDate||autoDue(document.getElementById("fDate").value,document.getElementById("fSource").value);
-  updateCardVisibility();updateDue();document.getElementById("fDue").dataset.manual=x?"1":"";
+  updateCardVisibility();updatePlatformVisibility();updateDue();document.getElementById("fDue").dataset.manual=x?"1":"";
   const modal=document.getElementById("modal");modal.classList.remove("hidden");modal.style.setProperty("display","flex","important");
 }
 function closeForm(){const m=document.getElementById("modal");m.classList.add("hidden");m.style.setProperty("display","none","important")}
@@ -426,7 +444,7 @@ function saveForm(){
   const paymentType=document.getElementById("fPaymentType").value;
   if(paymentType==="信用卡"&&!document.getElementById("fCard").value){alert("請先選擇信用卡");return}
   const id=editId,x=editId?data.find(y=>y.id===editId):{id:Date.now(),done:false};
-  Object.assign(x,{purchaseDate:document.getElementById("fDate").value,content:document.getElementById("fContent").value.trim(),amount:Number(document.getElementById("fAmount").value||0),source:document.getElementById("fSource").value,paymentType,cardId:paymentType==="信用卡"?document.getElementById("fCard").value:"",platform:document.getElementById("fPlatform").value,dueDate:document.getElementById("fDue").value});
+  Object.assign(x,{purchaseDate:document.getElementById("fDate").value,content:document.getElementById("fContent").value.trim(),amount:Number(document.getElementById("fAmount").value||0),source:document.getElementById("fSource").value,paymentType,cardId:paymentType==="信用卡"?document.getElementById("fCard").value:"",platform:document.getElementById("fPlatform").value,customPlatform:document.getElementById("fCustomPlatform").value.trim(),dueDate:document.getElementById("fDue").value});
   if(!id)data.push(x);save();closeForm();
 }
 function togglePaid(id){const x=data.find(y=>y.id===id);if(x){x.done=!x.done;save()}}
@@ -447,7 +465,7 @@ function saveCard(){
   Object.assign(c,{bank,name:name||("卡片 "+last4),last4});if(!editCardId)settings.cards.push(c);save();closeCardForm();
 }
 function toggleCard(id){const c=settings.cards.find(x=>x.id===id);if(c){c.active=false;save()}}
-function addPlatform(){const n=prompt("輸入新的採購平台名稱");if(!n?.trim())return;if(settings.platforms.some(p=>p.name===n.trim()))return alert("這個平台已存在。");settings.platforms.push({id:"p"+Date.now(),name:n.trim(),active:true});save()}
+function addPlatform(){const n=prompt("輸入常用採購平台名稱");if(!n?.trim())return;if(settings.platforms.some(p=>p.name===n.trim()))return alert("這個平台已存在。");settings.platforms.push({id:"p"+Date.now(),name:n.trim(),active:true});save()}
 function renamePlatform(id){const p=settings.platforms.find(x=>x.id===id);if(!p)return;const n=prompt("修改平台名稱",p.name);if(n?.trim()){p.name=n.trim();save()}}
 function togglePlatform(id){const p=settings.platforms.find(x=>x.id===id);if(p){p.active=false;save()}}
 function clearAllData(){if(prompt("若確定要清空所有代墊資料，請輸入 OBSIDIAN")!=="OBSIDIAN")return;data=[];save();alert("代墊資料已清空。主檔設定仍會保留。")}
@@ -456,10 +474,10 @@ function printCert(){
   const ids=[...document.querySelectorAll(".certSel:checked")].map(c=>Number(c.value)),arr=data.filter(x=>ids.includes(Number(x.id)));
   if(!arr.length){alert("請先勾選資料");return}
   const total=sum(arr),tax=total*5/105,net=total-tax,w=window.open("","_blank");
-  w.document.write(`<html><head><title>支出證明單</title><style>body{font-family:"Microsoft JhengHei";padding:30px}.cert{max-width:800px;margin:auto}.cert h1{text-align:center;letter-spacing:10px}.cert table{width:100%;border-collapse:collapse}.cert th,.cert td{border:1px solid #333;padding:8px}.r{text-align:right}</style></head><body><div class="cert"><h1>支 出 證 明 單</h1><table><tr><th>摘要</th><th>未稅金額</th><th>稅額</th><th>總價</th><th>備註</th></tr>${arr.map(x=>{let t=x.amount*5/105;return `<tr><td>${esc(x.content)}</td><td class="r">${Math.round(x.amount-t).toLocaleString()}</td><td class="r">${Math.round(t).toLocaleString()}</td><td class="r">${Math.round(x.amount).toLocaleString()}</td><td>${esc(x.platform)}</td></tr>`}).join("")}<tr><th>合計</th><th class="r">${Math.round(net).toLocaleString()}</th><th class="r">${Math.round(tax).toLocaleString()}</th><th class="r">${Math.round(total).toLocaleString()}</th><th></th></tr></table><p style="margin-top:50px">領款人：____________________　日期：____________________</p></div><script>window.print()<\/script></body></html>`);w.document.close()
+  w.document.write(`<html><head><title>支出證明單</title><style>body{font-family:"Microsoft JhengHei";padding:30px}.cert{max-width:800px;margin:auto}.cert h1{text-align:center;letter-spacing:10px}.cert table{width:100%;border-collapse:collapse}.cert th,.cert td{border:1px solid #333;padding:8px}.r{text-align:right}</style></head><body><div class="cert"><h1>支 出 證 明 單</h1><table><tr><th>摘要</th><th>未稅金額</th><th>稅額</th><th>總價</th><th>備註</th></tr>${arr.map(x=>{let t=x.amount*5/105;return `<tr><td>${esc(x.content)}</td><td class="r">${Math.round(x.amount-t).toLocaleString()}</td><td class="r">${Math.round(t).toLocaleString()}</td><td class="r">${Math.round(x.amount).toLocaleString()}</td><td>${esc(x.platform==="__custom__"?(x.customPlatform||"其他平台"):(x.platform||"—"))}</td></tr>`}).join("")}<tr><th>合計</th><th class="r">${Math.round(net).toLocaleString()}</th><th class="r">${Math.round(tax).toLocaleString()}</th><th class="r">${Math.round(total).toLocaleString()}</th><th></th></tr></table><p style="margin-top:50px">領款人：____________________　日期：____________________</p></div><script>window.print()<\/script></body></html>`);w.document.close()
 }
 function exportCSV(){
- const rows=[["購買日期","內容","金額","採購類型","付款方式","信用卡末四碼","付款工具","平台","預計入帳日","狀態"],...data.map(x=>[x.purchaseDate,x.content,x.amount,x.source,x.paymentType||"",x.paymentType==="信用卡"?(settings.cards.find(c=>c.id===x.cardId)?.last4||""):"",paymentLabel(x),x.platform,x.dueDate,x.done?"已入帳":"待入帳"])];
+ const rows=[["購買日期","內容","金額","採購類型","付款方式","信用卡末四碼","付款工具","平台","預計入帳日","狀態"],...data.map(x=>[x.purchaseDate,x.content,x.amount,x.source,x.paymentType||"",x.paymentType==="信用卡"?(settings.cards.find(c=>c.id===x.cardId)?.last4||""):"",paymentLabel(x),x.platform,(x.platform==="__custom__"?(x.customPlatform||"其他平台"):(x.platform||"")),x.dueDate,x.done?"已入帳":"待入帳"])];
  const csv="\\ufeff"+rows.map(r=>r.map(v=>'"'+String(v??"").replaceAll('"','""')+'"').join(",")).join("\\r\\n");download(new Blob([csv],{type:"text/csv;charset=utf-8"}),"OBSIDIAN_代墊明細.csv")
 }
 function exportJSON(){download(new Blob([JSON.stringify({version:1,exportedAt:new Date().toISOString(),data,settings},null,2)],{type:"application/json"}),"OBSIDIAN_完整備份.json")}
@@ -468,16 +486,16 @@ function importJSON(inp){
    const o=JSON.parse(r.result);let arr,incSettings=null;
    if(Array.isArray(o)){arr=o}else{arr=o.data;incSettings=o.settings}
    if(!Array.isArray(arr))throw new Error();
-   if(incSettings){settings={...settings,...incSettings};settings.cards=settings.cards||[];settings.platforms=settings.platforms?.length?settings.platforms:PLATFORMS.map((name,i)=>({id:"p"+i,name,active:true}))}
+   if(incSettings){settings={...settings,...incSettings};settings.cards=settings.cards||[];settings.platforms=settings.platforms?.length?settings.platforms:PLATFORMS.map((name,i)=>({id:"p"+i,name,active:true}));normalizeCards()}
    data=arr.map(normalizeRecord);save();alert("匯入完成，共 "+data.length+" 筆")
  }catch(e){alert("檔案格式錯誤，未匯入資料")}finally{inp.value=""}};r.readAsText(f)
 }
 function download(blob,name){const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)}
 function tickClock(){const d=new Date();document.getElementById("clock").textContent=d.toLocaleString("zh-TW",{year:"numeric",month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit",second:"2-digit",hour12:false})}
-window.show=show;window.openForm=openForm;window.closeForm=closeForm;window.saveForm=saveForm;window.togglePaid=togglePaid;window.deleteItem=deleteItem;window.markSelectedPaid=markSelectedPaid;window.printCert=printCert;window.clearCert=clearCert;window.exportCSV=exportCSV;window.exportJSON=exportJSON;window.importJSON=importJSON;window.openCardForm=openCardForm;window.closeCardForm=closeCardForm;window.saveCard=saveCard;window.toggleCard=toggleCard;window.addPlatform=addPlatform;window.renamePlatform=renamePlatform;window.togglePlatform=togglePlatform;window.clearAllData=clearAllData;window.renderRecon=renderRecon;window.clearReconFilters=clearReconFilters;
+window.show=show;window.openForm=openForm;window.closeForm=closeForm;window.saveForm=saveForm;window.togglePaid=togglePaid;window.deleteItem=deleteItem;window.markSelectedPaid=markSelectedPaid;window.printCert=printCert;window.clearCert=clearCert;window.exportCSV=exportCSV;window.exportJSON=exportJSON;window.importJSON=importJSON;window.openCardForm=openCardForm;window.closeCardForm=closeCardForm;window.saveCard=saveCard;window.toggleCard=toggleCard;window.addPlatform=addPlatform;window.renamePlatform=renamePlatform;window.togglePlatform=togglePlatform;window.clearAllData=clearAllData;
 
 document.getElementById("closeModalBtn").onclick=closeForm;document.getElementById("cancelModalBtn").onclick=closeForm;document.getElementById("saveModalBtn").onclick=saveForm;
-document.getElementById("fPaymentType").onchange=updateCardVisibility;document.getElementById("fDate").onchange=()=>{document.getElementById("fDue").dataset.manual="";updateDue()};document.getElementById("fSource").onchange=()=>{document.getElementById("fDue").dataset.manual="";updateDue()};document.getElementById("fDue").onchange=()=>document.getElementById("fDue").dataset.manual="1";
+document.getElementById("fPaymentType").onchange=updateCardVisibility;document.getElementById("fPlatform").onchange=updatePlatformVisibility;document.getElementById("fDate").onchange=()=>{document.getElementById("fDue").dataset.manual="";updateDue()};document.getElementById("fSource").onchange=()=>{document.getElementById("fDue").dataset.manual="";updateDue()};document.getElementById("fDue").onchange=()=>document.getElementById("fDue").dataset.manual="1";
 document.getElementById("modal").onclick=e=>{if(e.target.id==="modal")closeForm()};
 document.getElementById("closeCardBtn").onclick=closeCardForm;document.getElementById("cancelCardBtn").onclick=closeCardForm;document.getElementById("saveCardBtn").onclick=saveCard;document.getElementById("cardModal").onclick=e=>{if(e.target.id==="cardModal")closeCardForm()};
 load();tickClock();setInterval(tickClock,1000);
