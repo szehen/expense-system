@@ -288,31 +288,51 @@ function normalizeRecord(x){
   return r;
 }
 function load(){
-  const raw=localStorage.getItem(KEY);
-  let loaded=false;
-  if(raw){
+  // 優先讀取 V7，但如果 V7 之前曾經建立過空資料庫，
+  // 不可以把舊版 advance_v2 的 560 筆資料蓋掉。
+  let bestData=null;
+  let bestSettings=null;
+  let bestRaw=null;
+
+  const candidates=[
+    {key:KEY, raw:localStorage.getItem(KEY)},
+    {key:"advance_v2", raw:localStorage.getItem("advance_v2")}
+  ];
+
+  for(const c of candidates){
+    if(!c.raw) continue;
     try{
-      const o=JSON.parse(raw);
-      settings={...settings,...(o.settings||{})};
-      settings.cards=Array.isArray(settings.cards)?settings.cards:[];
-      settings.platforms=Array.isArray(settings.platforms)?settings.platforms:[];
-      data=Array.isArray(o.data)?o.data:[];
-      loaded=true;
-      if(!localStorage.getItem(KEY+"_legacy_backup")) localStorage.setItem(KEY+"_legacy_backup",raw);
-    }catch(e){loaded=false}
+      const o=JSON.parse(c.raw);
+      const arr=Array.isArray(o)?o:(Array.isArray(o.data)?o.data:[]);
+      if(Array.isArray(arr) && (!bestData || arr.length>bestData.length)){
+        bestData=arr;
+        bestSettings=Array.isArray(o)?null:(o.settings||null);
+        bestRaw=c.raw;
+      }
+    }catch(e){}
   }
-  if(!loaded){
-    const old=localStorage.getItem("advance_v2");
-    if(old){try{data=JSON.parse(old);loaded=true}catch(e){data=[]}}
+
+  data=bestData||INITIAL||[];
+  if(bestSettings && typeof bestSettings==='object'){
+    settings={...settings,...bestSettings};
   }
-  if(!loaded) data=INITIAL;
+
   settings.cards=Array.isArray(settings.cards)?settings.cards:[];
   settings.platforms=Array.isArray(settings.platforms)?settings.platforms:[];
+
+  // 第一次從舊版資料庫轉換時，保留原始資料作為安全備份。
+  if(bestRaw && !localStorage.getItem(KEY+"_legacy_backup")){
+    localStorage.setItem(KEY+"_legacy_backup",bestRaw);
+  }
+
   normalizeCards();
   data=data.map(normalizeRecord);
-  if(!settings.platforms.length)settings.platforms=PLATFORMS.map((name,i)=>({id:"p"+i,name,active:true}));
+  if(!settings.platforms.length){
+    settings.platforms=PLATFORMS.map((name,i)=>({id:"p"+i,name,active:true}));
+  }
   save();
 }
+
 function normalizeCard(c,i=0){
   // 相容舊版／不同格式的信用卡資料，避免下拉選單只顯示「信用卡」
   if(typeof c === "string"){
