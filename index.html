@@ -248,52 +248,69 @@ function ym(d){return d?d.slice(0,7):""}
 function sum(a){return a.reduce((s,x)=>s+Number(x.amount||0),0)}
 function save(){localStorage.setItem(KEY,JSON.stringify({data,settings}));renderAll()}
 function normalizeRecord(x){
-  let r={...x};
-  r.id=Number(r.id)||Date.now()+Math.random();
-  r.purchaseDate=r.purchaseDate||today();
-  r.content=String(r.content||"");
-  r.amount=Number(r.amount||0);
-  r.source=SOURCES.includes(r.source)?r.source:"零星採購";
-  r.done=!!r.done;
-  r.dueDate=r.dueDate||autoDue(r.purchaseDate,r.source);
-  r.platform=String(r.platform||"");
-  r.customPlatform=String(r.customPlatform||"");
-  if(!r.paymentType){
-    let p=String(r.payment||"");
-    let m=p.match(/(?:^|\\D)(\\d{4})(?:\\D|$)/);
-    if(m){
-      const last4=m[1];
-      let card=settings.cards.find(c=>c.last4===last4);
-      if(!card){card={id:"c"+Date.now()+Math.random(),bank:"",name:"卡片 "+last4,last4,active:true};settings.cards.push(card)}
-      r.paymentType="信用卡";r.cardId=card.id;
-    }else if(/現金/.test(p)) r.paymentType="現金";
-    else if(/轉帳|匯款/.test(p)) r.paymentType="轉帳";
-    else if(p) r.paymentType="信用卡";
-    else r.paymentType="轉帳";
-  }
-  if(r.paymentType==="信用卡" && !r.cardId && r.payment){
-    let m=String(r.payment).match(/(?:^|\\D)(\\d{4})(?:\\D|$)/);
-    if(m){
-      let card=settings.cards.find(c=>c.last4===m[1]);
-      if(!card){card={id:"c"+Date.now()+Math.random(),bank:"",name:"卡片 "+m[1],last4:m[1],active:true};settings.cards.push(card)}
-      r.cardId=card.id;
-    }
-  }
+  const r={...x};
+  const pick=(...keys)=>{for(const k of keys){if(r[k]!==undefined&&r[k]!==null&&String(r[k]).trim()!=="")return r[k]}return ""};
+  r.id=Number(pick("id","ID","編號"))||Date.now()+Math.random();
+  r.purchaseDate=String(pick("purchaseDate","date","日期","購買日期","代墊日期")||today()).slice(0,10);
+  r.content=String(pick("content","item","name","項目","內容","摘要","品項")||"");
+  r.amount=Number(String(pick("amount","金額","金額(含稅)")||0).replace(/,/g,""))||0;
+
+  const src=String(pick("source","type","採購類型","來源","purchaseType")||"").trim();
+  if(/ERP|採購單|系統採購/i.test(src)) r.source="ERP採購";
+  else if(/零星|零用|臨時/i.test(src)) r.source="零星採購";
+  else r.source=SOURCES.includes(src)?src:"零星採購";
+
+  const rawDone=r.done;
+  const status=String(pick("status","狀態","入帳狀態","付款狀態")||"").trim();
+  if(typeof rawDone==="boolean") r.done=rawDone;
+  else if(/已入帳|已付款|已結清|完成/i.test(status)) r.done=true;
+  else if(/待入帳|未入帳|待付款|未付款/i.test(status)) r.done=false;
+  else r.done=false;
+
+  r.dueDate=String(pick("dueDate","due","預計入帳日","預計付款日")||"").slice(0,10) || autoDue(r.purchaseDate,r.source);
+  r.platform=String(pick("platform","平台","採購平台","sourcePlatform")||"");
+  r.customPlatform=String(pick("customPlatform","其他平台","手動平台")||"");
+
+  let p=String(pick("paymentType","payment","pay","付款方式","paymentMethod")||"").trim();
+  if(/信用卡|card/i.test(p)) r.paymentType="信用卡";
+  else if(/現金/i.test(p)) r.paymentType="現金";
+  else if(/轉帳|匯款|銀行/i.test(p)) r.paymentType="轉帳";
+  else if(p.match(/\d{4}/)) r.paymentType="信用卡";
+  else r.paymentType=PAYMENT_TYPES.includes(p)?p:"轉帳";
+
+  let last4=String(pick("cardLast4","last4","末四碼","信用卡末四碼")||"").replace(/\D/g,"").slice(-4);
+  if(!last4){const m=p.match(/(?:^|\D)(\d{4})(?:\D|$)/);if(m)last4=m[1]}
+  if(r.paymentType==="信用卡" && last4){
+    let card=settings.cards.find(c=>String(c.last4)===last4);
+    if(!card){card={id:"c"+Date.now()+Math.random(),bank:"",name:"卡片 "+last4,last4,active:true};settings.cards.push(card)}
+    r.cardId=String(pick("cardId","cardID","creditCardId")||card.id);
+  }else if(r.paymentType!=="信用卡") r.cardId="";
   return r;
 }
 function load(){
   const raw=localStorage.getItem(KEY);
+  let loaded=false;
   if(raw){
-    try{let o=JSON.parse(raw);data=(o.data||[]).map(normalizeRecord);settings=o.settings||settings}catch(e){data=[]}
-  }else{
-    const old=localStorage.getItem("advance_v2");
-    if(old){
-      try{let arr=JSON.parse(old);data=arr.map(normalizeRecord)}catch(e){data=[]}
-    }else data=INITIAL.map(normalizeRecord);
+    try{
+      const o=JSON.parse(raw);
+      settings={...settings,...(o.settings||{})};
+      settings.cards=Array.isArray(settings.cards)?settings.cards:[];
+      settings.platforms=Array.isArray(settings.platforms)?settings.platforms:[];
+      data=Array.isArray(o.data)?o.data:[];
+      loaded=true;
+      if(!localStorage.getItem(KEY+"_legacy_backup")) localStorage.setItem(KEY+"_legacy_backup",raw);
+    }catch(e){loaded=false}
   }
-  if(!settings.platforms?.length)settings.platforms=PLATFORMS.map((name,i)=>({id:"p"+i,name,active:true}));
-  settings.cards=settings.cards||[];
+  if(!loaded){
+    const old=localStorage.getItem("advance_v2");
+    if(old){try{data=JSON.parse(old);loaded=true}catch(e){data=[]}}
+  }
+  if(!loaded) data=INITIAL;
+  settings.cards=Array.isArray(settings.cards)?settings.cards:[];
+  settings.platforms=Array.isArray(settings.platforms)?settings.platforms:[];
   normalizeCards();
+  data=data.map(normalizeRecord);
+  if(!settings.platforms.length)settings.platforms=PLATFORMS.map((name,i)=>({id:"p"+i,name,active:true}));
   save();
 }
 function normalizeCard(c,i=0){
