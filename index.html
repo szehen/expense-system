@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>OBSIDIAN｜個人代墊管理</title>
+<title>OBSIDIAN｜個人代墊管理 V1.1</title>
 <style>
 :root{--b:#1976d2;--lb:#eaf4ff;--ink:#16324f;--muted:#718096;--line:#dbe7f2;--bg:#f5f8fc;--green:#16845b;--orange:#c87516;--red:#c74444}
 *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans TC",sans-serif}
@@ -27,7 +27,7 @@ table{width:100%;border-collapse:collapse;font-size:13px}th,td{text-align:left;p
 <header class="top"><div class="topin">
 <div class="logo">OBSIDIAN<small>個人代墊 × 公司回款 × 現金流雷達</small></div>
 <nav class="nav">
-<button data-page="dash" class="active">現金流雷達</button><button data-page="add">新增代墊</button><button data-page="pending">公司待回款</button><button data-page="detail">代墊明細</button><button data-page="cert">支出證明</button><button data-page="settings">設定</button>
+<button data-page="dash" class="active">現金流雷達</button><button data-page="add">新增代墊</button><button data-page="pending">公司待回款</button><button data-page="detail">代墊明細</button><button data-page="settings">設定</button>
 </nav></div></header>
 
 <main class="wrap">
@@ -56,7 +56,7 @@ table{width:100%;border-collapse:collapse;font-size:13px}th,td{text-align:left;p
 <div id="customPlatformWrap" class="full hidden"><label>其他平台／手動輸入</label><input id="fCustomPlatform"></div>
 <div><label>付款方式</label><select id="fPayment" onchange="toggleCard()"><option>信用卡</option><option>轉帳</option><option>現金</option></select></div>
 <div id="cardWrap"><label>信用卡</label><select id="fCard"></select></div>
-<div class="full"><label>預計公司回款日</label><input id="fDue" type="date" readonly></div>
+<div class="full"><label>預計公司回款日 <span style="font-weight:400;color:#718096">（系統預設，可自行修改）</span></label><div style="display:flex;gap:8px"><input id="fDue" type="date"><button type="button" class="btn" onclick="resetDue()">↻ 系統預設</button></div></div>
 </div>
 <div class="toolbar" style="margin-top:18px"><button class="btn primary" onclick="saveRecord()">儲存代墊</button><button class="btn" onclick="clearForm()">清除</button></div><div id="saveMsg" class="note hidden">已儲存。</div>
 </div></section>
@@ -68,10 +68,8 @@ table{width:100%;border-collapse:collapse;font-size:13px}th,td{text-align:left;p
 
 <section id="detail" class="page"><h1>代墊明細</h1><div class="sub">完整查詢與管理紀錄；平常不用特別來這裡。</div><div class="card">
 <div class="toolbar"><input id="q" placeholder="搜尋內容／平台／卡號／付款方式" oninput="renderDetail()" style="max-width:360px"><select id="filterSource" onchange="renderDetail()" style="max-width:170px"><option value="">全部類型</option><option>ERP採購</option><option>零星採購</option></select><select id="filterStatus" onchange="renderDetail()" style="max-width:150px"><option value="">全部狀態</option><option value="pending">未回款</option><option value="paid">已回款</option></select></div>
-<div class="tablewrap"><table><thead><tr><th>購買日</th><th>類型</th><th>內容</th><th>平台</th><th>付款</th><th>回款日</th><th>金額</th><th>狀態</th><th></th></tr></thead><tbody id="detailRows"></tbody></table></div>
+<div class="tablewrap"><table><thead><tr><th>購買日</th><th>類型</th><th>內容</th><th>平台</th><th>付款</th><th>回款日</th><th>金額</th><th>狀態</th><th>操作</th></tr></thead><tbody id="detailRows"></tbody></table></div>
 </div></section>
-
-<section id="cert" class="page"><h1>支出證明</h1><div class="sub">選擇代墊紀錄後產生簡潔的支出證明列印頁。</div><div class="card"><div class="toolbar"><select id="certSelect" style="max-width:520px"></select><button class="btn primary" onclick="printCert()">列印支出證明</button></div><div class="note">目前支出證明採單筆列印，金額會自動計算 5% 稅額欄位。</div></div></section>
 
 <section id="settings" class="page"><h1>設定</h1><div class="sub">把會重複使用的資料放在這裡，避免每次重新輸入。</div>
 <div class="grid g2"><div class="card"><div class="section-title">信用卡管理</div><div id="cardsList"></div><button class="btn primary" onclick="addCard()">＋ 新增信用卡</button></div>
@@ -88,16 +86,42 @@ const $=id=>document.getElementById(id),money=n=>"$"+Number(n||0).toLocaleString
 function save(){localStorage.setItem(KEY,JSON.stringify(data));localStorage.setItem(KEY+"_settings",JSON.stringify(settings))}
 function go(p){document.querySelectorAll(".page").forEach(x=>x.classList.remove("active"));$(p).classList.add("active");document.querySelectorAll(".nav button").forEach(x=>x.classList.toggle("active",x.dataset.page===p));renderAll()}
 document.querySelectorAll(".nav button").forEach(b=>b.onclick=()=>go(b.dataset.page));
-function calcDue(d,s){let x=new Date(d+"T12:00:00");if(s==="零星採購"){if(x.getDate()<=25)x.setDate(25);else{x.setMonth(x.getMonth()+1);x.setDate(25)}}else{x.setMonth(x.getMonth()+1);x.setDate(0)}return x.toISOString().slice(0,10)}
-function renderForm(){if(!$("fDate").value)$("fDate").value=today();$("fPlatform").innerHTML='<option value="">請選擇</option>'+settings.platforms.filter(x=>x.active!==false).map(x=>`<option>${esc(x.name)}</option>`).join("")+'<option value="__other">其他／手動輸入</option>';$("fCard").innerHTML='<option value="">請選擇信用卡</option>'+settings.cards.filter(x=>x.active!==false).map(x=>`<option value="${esc(x.id)}">${esc(x.bank)}｜${esc(x.name)}｜${esc(x.last4)}</option>`).join("");$("fDue").value=calcDue($("fDate").value,$("fSource").value)}
-$("fDate").onchange=renderForm;$("fSource").onchange=renderForm;$("fPlatform").onchange=()=>{$("customPlatformWrap").classList.toggle("hidden",$("fPlatform").value!=="__other")};
+function calcDue(d,s){let x=new Date(d+"T12:00:00");if(s==="零星採購"){if(x.getDate()<=25)x.setDate(25);else{x.setMonth(x.getMonth()+1);x.setDate(25)}}else{x.setMonth(x.getMonth()+1);x.setDate(30)}return x.toISOString().slice(0,10)}
+function renderForm(){if(!$("fDate").value)$("fDate").value=today();let pv=$("fPlatform").value,cv=$("fCard").value;$("fPlatform").innerHTML='<option value="">請選擇</option>'+settings.platforms.filter(x=>x.active!==false).map(x=>`<option>${esc(x.name)}</option>`).join("")+'<option value="__other">其他／手動輸入</option>';$("fPlatform").value=pv;$("fCard").innerHTML='<option value="">請選擇信用卡</option>'+settings.cards.filter(x=>x.active!==false).map(x=>`<option value="${esc(x.id)}">${esc(x.bank)}｜${esc(x.name)}｜${esc(x.last4)}</option>`).join("");$("fCard").value=cv;$("customPlatformWrap").classList.toggle("hidden",$("fPlatform").value!=="__other");if(!$("fDue").value)$("fDue").value=calcDue($("fDate").value,$("fSource").value)}
+function resetDue(){$("fDue").value=calcDue($("fDate").value,$("fSource").value)}
+$("fDate").onchange=()=>{resetDue()};$("fSource").onchange=()=>{resetDue()};$("fPlatform").onchange=()=>{$("customPlatformWrap").classList.toggle("hidden",$("fPlatform").value!=="__other")};
 function toggleCard(){$("cardWrap").classList.toggle("hidden",$("fPayment").value!=="信用卡")}
 function clearForm(){$("fDate").value=today();$("fSource").value="ERP採購";$("fContent").value="";$("fAmount").value="";$("fPlatform").value="";$("fCustomPlatform").value="";$("fPayment").value="信用卡";$("fCard").value="";$("customPlatformWrap").classList.add("hidden");toggleCard();renderForm()}
 function saveRecord(){let c=$("fContent").value.trim(),a=Number($("fAmount").value);if(!c||!a)return alert("請至少填寫代墊內容與金額。");let p=$("fPlatform").value==="__other"?$("fCustomPlatform").value.trim():$("fPlatform").value;if($("fPlatform").value==="__other"&&!p)return alert("請輸入其他平台名稱。");data.push({id:Date.now().toString(36),purchaseDate:$("fDate").value,source:$("fSource").value,content:c,amount:a,platform:p,paymentType:$("fPayment").value,cardId:$("fCard").value,dueDate:$("fDue").value,done:false});save();renderAll();$("saveMsg").classList.remove("hidden");setTimeout(()=>$("saveMsg").classList.add("hidden"),1500);clearForm()}
 function cardName(id){let c=settings.cards.find(x=>x.id===id);return c?`${c.bank} ${c.name} (${c.last4})`:""}
 function renderDash(){let p=data.filter(r=>!r.done),out=p.reduce((s,r)=>s+Number(r.amount),0),sort=[...p].sort((a,b)=>a.dueDate.localeCompare(b.dueDate)),n=sort[0],bill=Number(localStorage.getItem(KEY+"_bill")||0);$("mOutstanding").textContent=money(out);$("mCount").textContent=p.length+" 筆未回款";$("mNext").textContent=n?money(n.amount):"$0";$("mNextDate").textContent=n?fmt(n.dueDate):"尚無資料";$("mBill").textContent=money(bill);$("mBurden").textContent=money(Math.max(0,bill-out));$("upcoming").innerHTML=sort.slice(0,6).map(r=>`<div class="next"><div><span class="badge ${r.source==="ERP採購"?"erp":"spot"}">${esc(r.source)}</span><div style="margin-top:5px;font-weight:700">${esc(r.content)}</div><div style="font-size:12px;color:#718096">${esc(r.platform||"—")} · ${esc(r.paymentType)}</div></div><div class="datebox"><b>${fmt(r.dueDate)}</b><span>${money(r.amount)}</span></div></div>`).join("")||'<div class="empty">目前沒有待回款資料。</div>';$("cardSummary").innerHTML=`<div class="note"><b>本期卡費：</b>${money(bill)}<br><b>目前公司待回款：</b>${money(out)}<br><b>估算個人實際負擔：</b>${money(Math.max(0,bill-out))}<br><small>※ 僅作現金流估算。</small></div>`}
 function renderPending(){let p=data.filter(r=>!r.done);let sum=s=>p.filter(r=>r.source===s).reduce((a,r)=>a+Number(r.amount),0);$("pErp").textContent=money(sum("ERP採購"));$("pSpot").textContent=money(sum("零星採購"));$("pTotal").textContent=money(p.reduce((a,r)=>a+Number(r.amount),0));$("pendingRows").innerHTML=[...p].sort((a,b)=>a.dueDate.localeCompare(b.dueDate)).map(r=>`<tr><td>${fmt(r.dueDate)}</td><td><span class="badge ${r.source==="ERP採購"?"erp":"spot"}">${esc(r.source)}</span></td><td>${esc(r.content)}</td><td>${esc(r.platform||"—")}</td><td>${esc(r.paymentType)}${r.cardId?" · "+esc(cardName(r.cardId)):""}</td><td class="money">${money(r.amount)}</td><td><button class="btn" onclick="markPaid('${r.id}')">標記已回款</button></td></tr>`).join("")||'<tr><td colspan="7" class="empty">目前沒有公司待回款。</td></tr>'}
-function renderDetail(){let q=$("q").value.toLowerCase(),fs=$("filterSource").value,st=$("filterStatus").value;let rows=data.filter(r=>(!q||[r.content,r.platform,r.paymentType,cardName(r.cardId)].join(" ").toLowerCase().includes(q))&&(!fs||r.source===fs)&&(!st||(st==="pending"?!r.done:r.done))).sort((a,b)=>b.purchaseDate.localeCompare(a.purchaseDate));$("detailRows").innerHTML=rows.map(r=>`<tr><td>${fmt(r.purchaseDate)}</td><td><span class="badge ${r.source==="ERP採購"?"erp":"spot"}">${esc(r.source)}</span></td><td>${esc(r.content)}</td><td>${esc(r.platform||"—")}</td><td>${esc(r.paymentType)}${r.cardId?"<br><small>"+esc(cardName(r.cardId))+"</small>":""}</td><td>${fmt(r.dueDate)}</td><td class="money">${money(r.amount)}</td><td><span class="badge ${r.done?"paid":"pending"}">${r.done?"已回款":"未回款"}</span></td><td><button class="btn" onclick="markPaid('${r.id}')">回款</button> <button class="btn danger" onclick="del('${r.id}')">刪除</button></td></tr>`).join("")||'<tr><td colspan="9" class="empty">沒有符合條件的紀錄。</td></tr>'}
+function renderDetail(){let q=$("q").value.toLowerCase(),fs=$("filterSource").value,st=$("filterStatus").value;let rows=data.filter(r=>(!q||[r.content,r.platform,r.paymentType,cardName(r.cardId)].join(" ").toLowerCase().includes(q))&&(!fs||r.source===fs)&&(!st||(st==="pending"?!r.done:r.done))).sort((a,b)=>b.purchaseDate.localeCompare(a.purchaseDate));$("detailRows").innerHTML=rows.map(r=>`<tr><td>${fmt(r.purchaseDate)}</td><td><span class="badge ${r.source==="ERP採購"?"erp":"spot"}">${esc(r.source)}</span></td><td>${esc(r.content)}</td><td>${esc(r.platform||"—")}</td><td>${esc(r.paymentType)}${r.cardId?"<br><small>"+esc(cardName(r.cardId))+"</small>":""}</td><td>${fmt(r.dueDate)}</td><td class="money">${money(r.amount)}</td><td><span class="badge ${r.done?"paid":"pending"}">${r.done?"已回款":"未回款"}</span></td><td><button class="btn" onclick="editRecord('${r.id}')">編輯</button> <button class="btn" onclick="markPaid('${r.id}')">回款</button> <button class="btn danger" onclick="del('${r.id}')">刪除</button></td></tr>`).join("")||'<tr><td colspan="9" class="empty">沒有符合條件的紀錄。</td></tr>'}
+function editRecord(id){
+  let r=data.find(x=>x.id===id); if(!r)return;
+  $("modalTitle").textContent="編輯代墊";
+  $("modalBody").innerHTML=`
+    <div class="formgrid">
+      <div><label>購買日期</label><input id="eDate" type="date" value="${esc(r.purchaseDate)}"></div>
+      <div><label>採購類型</label><select id="eSource"><option ${r.source==="ERP採購"?"selected":""}>ERP採購</option><option ${r.source==="零星採購"?"selected":""}>零星採購</option></select></div>
+      <div class="full"><label>代墊內容</label><input id="eContent" value="${esc(r.content)}"></div>
+      <div><label>金額</label><input id="eAmount" type="number" min="0" step="1" value="${Number(r.amount)||0}"></div>
+      <div><label>付款方式</label><select id="ePayment"><option ${r.paymentType==="信用卡"?"selected":""}>信用卡</option><option ${r.paymentType==="轉帳"?"selected":""}>轉帳</option><option ${r.paymentType==="現金"?"selected":""}>現金</option></select></div>
+      <div class="full"><label>預計公司回款日</label><div style="display:flex;gap:8px"><input id="eDue" type="date" value="${esc(r.dueDate||"")}"><button type="button" class="btn" onclick="resetEditDue()">↻ 系統預設</button></div></div>
+    </div>
+    <div class="note" style="margin-top:13px">回款日可依實際情況修改；「系統預設」會依採購類型與購買日期重新計算。</div>
+    <div class="toolbar" style="margin-top:15px"><button class="btn primary" onclick="saveEdit('${r.id}')">儲存修改</button></div>`;
+  $("modalBack").style.display="flex";
+}
+function resetEditDue(){$("eDue").value=calcDue($("eDate").value,$("eSource").value)}
+function saveEdit(id){
+  let r=data.find(x=>x.id===id);if(!r)return;
+  let c=$("eContent").value.trim(),a=Number($("eAmount").value);
+  if(!c||!a)return alert("請至少填寫代墊內容與金額。");
+  r.purchaseDate=$("eDate").value;r.source=$("eSource").value;r.content=c;r.amount=a;r.paymentType=$("ePayment").value;r.dueDate=$("eDue").value;
+  if(r.paymentType!=="信用卡")r.cardId="";
+  save();closeModal();renderAll();
+}
 function markPaid(id){let r=data.find(x=>x.id===id);if(r&&confirm(`確認「${r.content}」已回款？`)){r.done=true;save();renderAll()}}function del(id){let r=data.find(x=>x.id===id);if(r&&confirm(`確定刪除「${r.content}」？`)){data=data.filter(x=>x.id!==id);save();renderAll()}}
 function renderSettings(){$("cardsList").innerHTML=settings.cards.map(c=>`<div class="next"><div><b>${esc(c.bank)}｜${esc(c.name)}</b><div style="font-size:12px;color:#718096">末四碼 ${esc(c.last4)}</div></div><button class="btn danger" onclick="removeCard('${c.id}')">刪除</button></div>`).join("")||'<div class="empty">尚未建立信用卡。</div>';$("platformList").innerHTML=settings.platforms.map(p=>`<div class="next"><b>${esc(p.name)}</b><button class="btn danger" onclick="removePlatform('${p.id}')">刪除</button></div>`).join("")||'<div class="empty">尚未建立常用平台。</div>'}
 function addPlatform(){let n=prompt("輸入常用採購平台名稱：");if(n&&n.trim()){settings.platforms.push({id:Date.now().toString(36),name:n.trim(),active:true});save();renderAll()}}function removePlatform(id){if(confirm("刪除此平台？")){settings.platforms=settings.platforms.filter(x=>x.id!==id);save();renderAll()}}
@@ -107,6 +131,6 @@ function renderCert(){$("certSelect").innerHTML='<option value="">請選擇一�
 function printCert(){let r=data.find(x=>x.id===$("certSelect").value);if(!r)return alert("請先選擇一筆代墊。");let tax=Math.round(r.amount/1.05*.05),net=r.amount-tax,w=open("","_blank");w.document.write(`<html><body style="font-family:Arial,'Noto Sans TC',sans-serif;padding:40px"><h1 style="text-align:center">支 出 證 明</h1><table style="width:100%;border-collapse:collapse">${[["購買日期",r.purchaseDate],["代墊內容",r.content],["採購類型",r.source],["採購平台",r.platform],["未稅金額",money(net)],["稅額 5%",money(tax)],["含稅金額",money(r.amount)]].map(x=>`<tr><th style="border:1px solid #999;padding:12px;text-align:left">${esc(x[0])}</th><td style="border:1px solid #999;padding:12px">${esc(x[1])}</td></tr>`).join("")}</table><p style="margin-top:60px">申請人簽章：____________________</p><script>print()<\/script></body></html>`);w.document.close()}
 function exportJSON(){let blob=new Blob([JSON.stringify({version:1,data,settings,bill:Number(localStorage.getItem(KEY+"_bill")||0)},null,2)],{type:"application/json"}),a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="OBSIDIAN_備份_"+today()+".json";a.click()}
 function importJSON(e){let f=e.target.files[0];if(!f)return;let rd=new FileReader();rd.onload=()=>{try{let x=JSON.parse(rd.result);if(!Array.isArray(x.data))throw 0;if(confirm(`匯入 ${x.data.length} 筆資料並覆蓋目前資料？`)){data=x.data;settings=x.settings||{cards:[],platforms:[]};localStorage.setItem(KEY+"_bill",String(x.bill||0));save();renderAll();alert("匯入完成。")}}catch(err){alert("JSON 格式不正確。")}};rd.readAsText(f);e.target.value=""}
-function renderAll(){renderDash();renderPending();renderDetail();renderSettings();renderCert();renderForm();toggleCard()}$("fDate").value=today();renderAll();
+function renderAll(){renderDash();renderPending();renderDetail();renderSettings();renderForm();toggleCard()}$("fDate").value=today();renderAll();
 </script>
 </body></html>
